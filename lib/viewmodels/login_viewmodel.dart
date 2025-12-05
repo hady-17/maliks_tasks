@@ -38,7 +38,9 @@ class LoginViewModel extends ChangeNotifier {
 
   // ---------------------------------------------------------------------------
   // Dropdown options (static for now)
+  // MUST MATCH DATABASE EXACTLY
   // ---------------------------------------------------------------------------
+
   final List<String> branches = [
     'AUB',
     'Book&Pens',
@@ -51,15 +53,14 @@ class LoginViewModel extends ChangeNotifier {
   ];
 
   final List<String> positions = [
-    'Manager',
     'supervisor',
-    'Cashier',
+    'cashier',
     'stationary',
-    'Designer',
+    'designer',
     'services',
   ];
 
-  final List<String> shifts = ['Day', 'Night'];
+  final List<String> shifts = ['day', 'night', 'both'];
 
   // ---------------------------------------------------------------------------
   // UI State
@@ -139,17 +140,17 @@ class LoginViewModel extends ChangeNotifier {
   Future<String> _resolveBranchId(String branchName) async {
     final supabase = Supabase.instance.client;
 
-    final data = await supabase
+    final result = await supabase
         .from('branches')
         .select('id')
         .eq('name', branchName)
         .maybeSingle();
 
-    if (data == null) {
+    if (result == null) {
       throw Exception("Branch '$branchName' not found in database.");
     }
 
-    return data['id'];
+    return result['id'];
   }
 
   // ---------------------------------------------------------------------------
@@ -174,7 +175,9 @@ class LoginViewModel extends ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
 
-      // 1. Sign up user
+      // -----------------------------------------------------
+      // 1. Sign up user with Supabase Auth
+      // -----------------------------------------------------
       final response = await supabase.auth.signUp(
         email: emailController.text.trim(),
         password: passwordController.text,
@@ -184,31 +187,66 @@ class LoginViewModel extends ChangeNotifier {
         throw Exception("Signup failed: no user returned.");
       }
 
-      // 2. Resolve branch ID
+      final userId = response.user!.id;
+
+      // -----------------------------------------------------
+      // 2. Get UUID of branch from branches table
+      // -----------------------------------------------------
       final branchId = await _resolveBranchId(_selectedBranch!);
 
-      // 3. Update the auto-created profile row
-      await supabase
-          .from('profiles')
-          .update({
-            'full_name': nameController.text.trim(),
-            'section': _selectedPosition,
-            'branch_id': branchId,
-            'shift': _selectedShift,
-          })
-          .eq('id', response.user!.id);
+      // -----------------------------------------------------
+      // 3. Ensure profile exists, then update it
+      //    (Supabase may auto-create via trigger, or we insert if missing)
+      // -----------------------------------------------------
 
-      // 4. Fetch and return the updated profile
+      // Check if profile exists
+      final existingProfile = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (existingProfile == null) {
+        // Profile doesn't exist, insert it
+        await supabase.from('profiles').insert({
+          'id': userId,
+          'full_name': nameController.text.trim(),
+          'section': _selectedPosition,
+          'branch_id': branchId,
+          'shift': _selectedShift!.toLowerCase(),
+        });
+      } else {
+        // Profile exists (created by trigger), update it
+        await supabase
+            .from('profiles')
+            .update({
+              'full_name': nameController.text.trim(),
+              'section': _selectedPosition,
+              'branch_id': branchId,
+              'shift': _selectedShift!.toLowerCase(),
+            })
+            .eq('id', userId);
+      }
+
+      // -----------------------------------------------------
+      // 4. Fetch and return the new profile data
+      // -----------------------------------------------------
       final profile = await supabase
           .from('profiles')
           .select()
-          .eq('id', response.user!.id)
+          .eq('id', userId)
           .maybeSingle();
 
       _isLoading = false;
       notifyListeners();
-      if (profile is Map<String, dynamic>) return profile;
-      return null;
+
+      if (profile == null) {
+        _errorMessage = 'Failed to create profile. Please try again.';
+        notifyListeners();
+        return null;
+      }
+
+      return Map<String, dynamic>.from(profile);
     } on AuthException catch (e) {
       _isLoading = false;
       _errorMessage = e.message;

@@ -31,6 +31,12 @@ MVVM (Provider + ChangeNotifier) pattern for the auth flows.
 	in, we persist the choice and user id in `shared_preferences`. On app
 	startup, `RootPage` respects that flag and only keeps the session if
 	the user opted in. Manual logout clears the saved flags.
+- Task creation screen with MVVM architecture:
+	- Role-based permissions for task assignment
+	- Team members: create tasks assigned to themselves (auto-filled)
+	- Managers: can assign tasks to any team member and modify branch/section
+	- Auto-fills: assignee (creator), assigned-to (default to self), branch ID, assigned section
+	- Validates both assignee and assigned-to emails exist in the system
 
 ## Key files and where to look
 
@@ -46,6 +52,10 @@ MVVM (Provider + ChangeNotifier) pattern for the auth flows.
 	`lib/viewmodels/login_viewmodel.dart` — business logic for auth flows.
 - `lib/view/screens/home.dart` — Home screen; currently expects the
 	profile Map via `Navigator` route arguments and displays basic fields.
+- `lib/view/screens/create_task.dart` — Task creation screen with
+	role-based field permissions.
+- `lib/viewmodels/create_task_viewmodel.dart` — Business logic for task
+	creation with email-to-UUID resolution and validation.
 
 ## Dependencies added
 
@@ -66,6 +76,39 @@ MVVM (Provider + ChangeNotifier) pattern for the auth flows.
 	 `false` or the remembered id doesn't match the active session, the
 	 app signs out the Supabase session and shows the welcome screen.
 4. Manual logout clears the stored flags.
+
+## Task Creation Flow
+
+### Field Behaviors
+
+**For All Users:**
+- **Assignee (Creator)**: Auto-filled with current user's email, read-only
+- **Title**: Required text field
+- **Description**: Optional text area
+- **Priority**: Dropdown (low/normal/high), defaults to 'normal'
+- **Task Date**: Date picker, defaults to today
+- **Shift**: Dropdown (day/night/both), auto-filled from user's profile
+
+**For Team Members (role = 'member'):**
+- **Assigned To**: Auto-filled with their own email, read-only (can only create tasks for themselves)
+- **Branch ID**: Auto-filled from their profile, read-only
+- **Assigned Section**: Auto-filled from their profile, read-only
+
+**For Managers (role = 'manager'):**
+- **Assigned To**: Editable - can assign tasks to any team member by email
+- **Branch ID**: Editable - can change the branch assignment
+- **Assigned Section**: Editable - can assign to any section
+
+### Database Mapping
+The form creates a task with these fields:
+- `created_by`: UUID of assignee (creator)
+- `assigned_to`: UUID of assigned-to person (resolved from email)
+- `branch_id`: UUID from profile or manager-specified
+- `assigned_section`: Section name from profile or manager-specified
+- `status`: Always 'pending' for new tasks
+- `priority`: 'low', 'normal', or 'high'
+- `task_date`: Date in YYYY-MM-DD format
+- `shift`: 'day', 'night', or 'both'
 
 ## Known issues & next improvements
 

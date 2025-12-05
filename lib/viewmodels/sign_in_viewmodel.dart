@@ -97,6 +97,13 @@ class SignInViewModel extends ChangeNotifier {
           .eq('id', userId)
           .maybeSingle();
 
+      if (profile == null) {
+        _isLoading = false;
+        _errorMessage = 'Profile not found. Please contact support.';
+        notifyListeners();
+        return null;
+      }
+
       // Persist the remember-me choice so app startup can respect it
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -108,8 +115,8 @@ class SignInViewModel extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
-      if (profile is Map<String, dynamic>) return profile;
-      return null;
+
+      return Map<String, dynamic>.from(profile);
     } on AuthException catch (e) {
       _isLoading = false;
       _errorMessage = e.message;

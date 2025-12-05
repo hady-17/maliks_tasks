@@ -8,9 +8,7 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  // Add more images to the assets folder and to `pubspec.yaml` to have
-  // multiple images to cycle through. For now the generator found
-  // `assets/MaliksLogo.png` which is used as the default.
+  double heightLine = 3;
   final List<String> images = [
     'assets/Vector.png',
     // 'assets/MaliksLogo2.png',
@@ -66,8 +64,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         child: Image.asset(
                           images[_current],
                           key: ValueKey<String>(images[_current]),
-                          width: 220,
-                          height: 220,
+                          width: 160,
+                          height: 160,
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -107,6 +105,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10.0),
+                        child: SizedBox(
+                          height: heightLine,
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          child: Container(color: Colors.red.shade300),
+                        ),
+                      ),
                       Text(
                         'Welcome to Maliks Tasks',
                         style: TextStyle(
@@ -166,10 +172,17 @@ class _WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-    path.lineTo(0, size.height - 60);
 
-    final firstControlPoint = Offset(size.width / 4, size.height);
-    final firstEndPoint = Offset(size.width / 2, size.height - 50);
+    // Start at the top-left so the grey area begins at the very top of the screen
+    path.moveTo(0, 0);
+    // Top edge to the top-right
+    path.lineTo(size.width, 0);
+    // Drop down from the top-right to start the wave
+    path.lineTo(size.width, size.height - 80);
+
+    // Wave from right -> center -> left
+    final firstControlPoint = Offset(size.width * 3 / 4, size.height - 140);
+    final firstEndPoint = Offset(size.width / 2, size.height - 60);
     path.quadraticBezierTo(
       firstControlPoint.dx,
       firstControlPoint.dy,
@@ -177,8 +190,8 @@ class _WaveClipper extends CustomClipper<Path> {
       firstEndPoint.dy,
     );
 
-    final secondControlPoint = Offset(size.width * 3 / 4, size.height - 120);
-    final secondEndPoint = Offset(size.width, size.height - 60);
+    final secondControlPoint = Offset(size.width / 4, size.height + 40);
+    final secondEndPoint = Offset(0, size.height - 120);
     path.quadraticBezierTo(
       secondControlPoint.dx,
       secondControlPoint.dy,
@@ -186,7 +199,6 @@ class _WaveClipper extends CustomClipper<Path> {
       secondEndPoint.dy,
     );
 
-    path.lineTo(size.width, 0);
     path.close();
     return path;
   }

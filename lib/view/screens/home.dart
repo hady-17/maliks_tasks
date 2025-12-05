@@ -1,65 +1,117 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:maliks_tasks/view/widgets/appBar.dart';
+import 'package:maliks_tasks/view/widgets/navBar.dart';
+import 'package:maliks_tasks/view/widgets/taskCard.dart';
+import '../../model/task/tasks.dart';
+import '../../viewmodels/task_provider.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomePage extends StatefulWidget {
+  final Map<String, dynamic>? profile;
+  const HomePage({super.key, this.profile});
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _currentIndex = 0;
+
+  Map<String, dynamic>? _resolveProfile(BuildContext context) {
+    if (widget.profile != null) return widget.profile;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map<String, dynamic>) return args;
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments;
+    final p = _resolveProfile(context);
 
-    // Expecting a Map<String, dynamic> with user profile fields
-    final Map<String, dynamic>? profile = args is Map<String, dynamic>
-        ? args
-        : null;
+    if (p == null) {
+      return const Scaffold(body: Center(child: Text('No profile provided')));
+    }
 
-    final String displayName =
-        profile?['full_name'] ?? profile?['name'] ?? 'User';
-    final String branch =
-        profile?['branch'] ?? profile?['branch_id']?.toString() ?? '-';
-    final String position = profile?['position'] ?? profile?['section'] ?? '-';
-    final String userId = profile?['id'] ?? '-';
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Home')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome, $displayName',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 12),
-            Text('ID: $userId'),
-            const SizedBox(height: 8),
-            Text('Branch: $branch'),
-            const SizedBox(height: 8),
-            Text('Position: $position'),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 12),
-            const Text(
-              'This is the home screen. Replace with your app content.',
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () async {
-                // log out and clear remembered flags
-                final navigator = Navigator.of(context);
-                await Supabase.instance.client.auth.signOut();
-                try {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.remove('remember_me');
-                  await prefs.remove('remember_user_id');
-                } catch (_) {}
-                navigator.pushReplacementNamed('/');
-              },
-              child: const Text("Log out"),
-            ),
-          ],
+      appBar: ModernAppBar(
+        title: 'Welcome, ${p['full_name']}',
+        subtitle: 'All your tasks at a glance',
+        showBackButton: false,
+        showSearchButton: true,
+      ),
+      body: StreamBuilder<List<Task>>(
+        stream: taskProvider.watchTodayTasks(
+          branchId: p['branch_id'],
+          section: p['section'] ?? '',
+          userId: p['id'],
+        ),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          final tasks = snapshot.data ?? [];
+
+          if (tasks.isEmpty) {
+            return const Center(child: Text('No tasks for today'));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              return TaskCard(
+                task: tasks[index],
+                onComplete: () {
+                  taskProvider.toggleTaskDone(tasks[index].id);
+                },
+                onEdit: () {
+                  // TODO: Implement edit task functionality
+                  print('Edit task: ${tasks[index].id}');
+                },
+                onTap: () {
+                  // TODO: Implement task details navigation
+                  print('View task details: ${tasks[index].id}');
+                },
+              );
+            },
+          );
+        },
+      ),
+      bottomNavigationBar: SafeArea(
+        child: ModernNavBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            if (index == 1) {
+            } else if (index == 2) {
+              Navigator.pushNamed(context, '/create_task', arguments: p);
+            } else if (index == 3) {
+              print('pressed on $index');
+            } else if (index == 4) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/profile',
+                (route) => false,
+                arguments: p,
+              );
+            } else {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                (route) => false,
+                arguments: p,
+              );
+            }
+          },
+          backgroundColor: const Color(0xFF8C7E7E),
+          activeColor: Colors.white,
+          inactiveColor: const Color(0xFFBDB8B8),
         ),
       ),
     );

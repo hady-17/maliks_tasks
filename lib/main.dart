@@ -6,6 +6,10 @@ import 'package:maliks_tasks/view/auth/login.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:maliks_tasks/viewmodels/task_provider.dart';
+import 'package:maliks_tasks/view/screens/create_task.dart';
+import 'package:maliks_tasks/view/screens/profile.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -29,9 +33,14 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         '/': (context) => const RootPage(),
-        '/home': (context) => const HomePage(),
+        '/home': (context) => ChangeNotifierProvider(
+          create: (_) => TaskProvider(),
+          child: const HomePage(),
+        ),
         '/sign_in': (context) => const SignInPage(),
         '/login': (context) => const LoginPage(),
+        '/create_task': (context) => const CreateTask(),
+        '/profile': (context) => const ProfilePage(),
       },
       debugShowCheckedModeBanner: false,
     );

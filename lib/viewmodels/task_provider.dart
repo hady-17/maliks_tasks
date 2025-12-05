@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../model/task/tasks.dart';
+
+class TaskProvider extends ChangeNotifier {
+  final dynamic supabase;
+
+  TaskProvider({dynamic supabaseClient})
+    : supabase = supabaseClient ?? Supabase.instance.client;
+
+  List<Task> _tasks = [];
+  bool _isLoading = false;
+  String? _error;
+
+  // Getters
+  List<Task> get tasks => _tasks;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  // ---------------------------------------------------------
+  // Load today's tasks for a team member (My Tasks + Section)
+  // ---------------------------------------------------------
+  Future<void> loadTodayTasks({
+    required String branchId,
+    required String section,
+    required String userId,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final today = DateTime.now().toIso8601String().split('T').first;
+
+      // Safe section fallback to prevent malformed 'or' expression when section is empty
+      final safeSection = (section.isNotEmpty) ? section : '_NO_SECTION_';
+
+      final response = await supabase
+          .from('tasks')
+          .select()
+          .eq('branch_id', branchId)
+          .eq('task_date', today)
+          .or('assigned_to.eq.$userId,assigned_section.eq.$safeSection')
+          .order('priority', ascending: true)
+          .order('created_at', ascending: false);
+
+      // Defensive handling: Supabase client may return different types in tests/errors.
+      if (response == null) {
+        _tasks = [];
+      } else if (response is List) {
+        _tasks = response
+            .map<Task>(
+              (json) => Task.fromJson(Map<String, dynamic>.from(json as Map)),
+            )
+            .toList();
+      } else {
+        // Unexpected response type: surface for debugging
+        _error = 'Unexpected response type: ${response.runtimeType}';
+        debugPrint('loadTodayTasks unexpected response: $response');
+        _tasks = [];
+      }
+    } catch (e) {
+      _error = "Failed to load tasks: $e";
+    }
+
+    _isLoading = false;
+    print("Loaded ${_tasks.length} tasks for $userId in $section at $branchId");
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------
+  // Mark task as done
+  // ---------------------------------------------------------
+  Future<void> toggleTaskDone(String taskId) async {
+    try {
+      // Determine current status (prefer local copy, fallback to DB)
+      String? currentStatus;
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        currentStatus = _tasks[index].status;
+      } else {
+        final resp = await supabase
+            .from('tasks')
+            .select('status')
+            .eq('id', taskId)
+            .maybeSingle();
+        if (resp is Map && resp.containsKey('status')) {
+          currentStatus = resp['status'] as String?;
+        }
+      }
+
+      // Toggle: if currently 'done' -> set to 'open', otherwise set to 'done'
+      final newStatus = (currentStatus == 'done') ? 'open' : 'done';
+
+      await supabase
+          .from('tasks')
+          .update({'status': newStatus})
+          .eq('id', taskId);
+
+      // Update local list if present
+      if (index != -1) {
+        _tasks[index] = _tasks[index].copyWith(status: newStatus);
+        notifyListeners();
+      } else {
+        // If not in local list, keep state untouched but still notify in case UI wants refresh
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error toggling task status: $e");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Add note to task
+  // ---------------------------------------------------------
+  Future<void> addNote({
+    required String taskId,
+    required String userId,
+    required String content,
+  }) async {
+    try {
+      await supabase.from('task_notes').insert({
+        'task_id': taskId,
+        'user_id': userId,
+        'content': content,
+      });
+    } catch (e) {
+      print("Error adding note: $e");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Watch today's tasks (realtime stream)
+  // ---------------------------------------------------------
+  Stream<List<Task>> watchTodayTasks({
+    required String branchId,
+    required String section,
+    required String userId,
+  }) {
+    final today = DateTime.now().toIso8601String().split('T').first;
+    final safeSection = (section.isNotEmpty) ? section : '_NO_SECTION_';
+
+    final stream = supabase.from('tasks').stream(primaryKey: ['id']);
+
+    return stream.map<List<Task>>((rows) {
+      final list = rows as List<dynamic>;
+      final filtered = list
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .where((row) {
+            final matchesBranch = row['branch_id'] == branchId;
+            final matchesDate = row['task_date'] == today;
+            final matchesUser =
+                row['assigned_to'] == userId ||
+                row['assigned_section'] == safeSection;
+            return matchesBranch && matchesDate && matchesUser;
+          })
+          .map((row) => Task.fromJson(row))
+          .toList();
+
+      // Sort by priority then created_at
+      filtered.sort((a, b) {
+        final order = {'low': 0, 'normal': 1, 'high': 2};
+        final pa = order[a.priority.toLowerCase()] ?? 1;
+        final pb = order[b.priority.toLowerCase()] ?? 1;
+        if (pa != pb) return pa.compareTo(pb);
+        return (b.taskDate).compareTo(a.taskDate);
+      });
+
+      return filtered;
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Clear tasks when logging out
+  // ---------------------------------------------------------
+  void clearTasks() {
+    _tasks = [];
+    notifyListeners();
+  }
+}

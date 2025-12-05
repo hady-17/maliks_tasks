@@ -50,193 +50,199 @@ class _LoginPageContentState extends State<_LoginPageContent> {
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            28,
-            20,
-            MediaQuery.of(context).viewInsets.bottom + 28,
-          ),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 56,
+                  maxWidth: 600,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 24,
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Header
-                        _buildHeader(context, accent),
-
-                        const SizedBox(height: 20),
-
-                        // Full name
-                        _buildTextField(
-                          controller: vm.nameController,
-                          label: 'Full name',
-                          hint: 'John Doe',
-                          prefix: Icons.person_outline,
-                          validator: vm.validateName,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Email
-                        _buildTextField(
-                          controller: vm.emailController,
-                          label: 'Email',
-                          hint: 'name@example.com',
-                          prefix: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: vm.validateEmail,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Password
-                        _buildTextField(
-                          controller: vm.passwordController,
-                          label: 'Password',
-                          hint: 'At least 6 characters',
-                          prefix: Icons.lock_outline,
-                          obscureText: vm.obscurePassword,
-                          suffix: IconButton(
-                            icon: Icon(
-                              vm.obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey[700],
-                            ),
-                            onPressed: vm.togglePasswordVisibility,
-                          ),
-                          validator: vm.validatePassword,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Confirm Password
-                        _buildTextField(
-                          controller: vm.confirmController,
-                          label: 'Confirm password',
-                          hint: 'Repeat your password',
-                          prefix: Icons.lock_outline,
-                          obscureText: vm.obscureConfirm,
-                          suffix: IconButton(
-                            icon: Icon(
-                              vm.obscureConfirm
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey[700],
-                            ),
-                            onPressed: vm.toggleConfirmVisibility,
-                          ),
-                          validator: vm.validateConfirmPassword,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Branch & Position row
-                        Row(
+                child: Center(
+                  child: Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 24,
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: _buildDropdown(
-                                value: vm.selectedBranch,
-                                hint: 'Branch',
-                                items: vm.branches,
-                                onChanged: vm.setBranch,
-                                validator: (v) =>
-                                    vm.validateDropdown(v, 'Branch'),
-                              ),
+                            // Header
+                            _buildHeader(context, accent),
+
+                            const SizedBox(height: 20),
+
+                            // Full name
+                            _buildTextField(
+                              controller: vm.nameController,
+                              label: 'Full name',
+                              hint: 'John Doe',
+                              prefix: Icons.person_outline,
+                              validator: vm.validateName,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildDropdown(
-                                value: vm.selectedPosition,
-                                hint: 'Position',
-                                items: vm.positions,
-                                onChanged: vm.setPosition,
-                                validator: (v) =>
-                                    vm.validateDropdown(v, 'Position'),
+
+                            const SizedBox(height: 12),
+
+                            // Email
+                            _buildTextField(
+                              controller: vm.emailController,
+                              label: 'Email',
+                              hint: 'name@example.com',
+                              prefix: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: vm.validateEmail,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Password
+                            _buildTextField(
+                              controller: vm.passwordController,
+                              label: 'Password',
+                              hint: 'At least 6 characters',
+                              prefix: Icons.lock_outline,
+                              obscureText: vm.obscurePassword,
+                              suffix: IconButton(
+                                icon: Icon(
+                                  vm.obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[700],
+                                ),
+                                onPressed: vm.togglePasswordVisibility,
+                              ),
+                              validator: vm.validatePassword,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Confirm Password
+                            _buildTextField(
+                              controller: vm.confirmController,
+                              label: 'Confirm password',
+                              hint: 'Repeat your password',
+                              prefix: Icons.lock_outline,
+                              obscureText: vm.obscureConfirm,
+                              suffix: IconButton(
+                                icon: Icon(
+                                  vm.obscureConfirm
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[700],
+                                ),
+                                onPressed: vm.toggleConfirmVisibility,
+                              ),
+                              validator: vm.validateConfirmPassword,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Branch & Position row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDropdown(
+                                    value: vm.selectedBranch,
+                                    hint: 'Branch',
+                                    items: vm.branches,
+                                    onChanged: vm.setBranch,
+                                    validator: (v) =>
+                                        vm.validateDropdown(v, 'Branch'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildDropdown(
+                                    value: vm.selectedPosition,
+                                    hint: 'Position',
+                                    items: vm.positions,
+                                    onChanged: vm.setPosition,
+                                    validator: (v) =>
+                                        vm.validateDropdown(v, 'Position'),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Shift dropdown
+                            _buildDropdown(
+                              value: vm.selectedShift,
+                              hint: 'Shift',
+                              items: vm.shifts,
+                              onChanged: vm.setShift,
+                              validator: (v) => vm.validateDropdown(v, 'Shift'),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Submit Button
+                            ElevatedButton(
+                              onPressed: vm.isLoading
+                                  ? null
+                                  : () => _handleSubmit(vm),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accent,
+                                disabledBackgroundColor: accent.withOpacity(
+                                  0.6,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: vm.isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Create account',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text(
+                                'Already have an account? Sign in',
+                                style: TextStyle(color: Colors.grey),
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 12),
-
-                        // Shift dropdown
-                        _buildDropdown(
-                          value: vm.selectedShift,
-                          hint: 'Shift',
-                          items: vm.shifts,
-                          onChanged: vm.setShift,
-                          validator: (v) => vm.validateDropdown(v, 'Shift'),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Submit Button
-                        ElevatedButton(
-                          onPressed: vm.isLoading
-                              ? null
-                              : () => _handleSubmit(vm),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accent,
-                            disabledBackgroundColor: accent.withOpacity(0.6),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: vm.isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  'Create account',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            'Already have an account? Sign in',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
