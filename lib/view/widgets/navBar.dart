@@ -21,9 +21,11 @@ class ModernNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = _buildNavItems();
+    // Use viewPadding to include system UI (gesture/navigation) insets
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
     return Container(
-      height: 70,
+      height: 70 + bottomInset,
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -37,17 +39,20 @@ class ModernNavBar extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(
-            items.length,
-            (index) => _NavBarItem(
-              icon: items[index].icon,
-              label: items[index].label,
-              isActive: currentIndex == index,
-              onTap: () => onTap(index),
-              activeColor: activeColor,
-              inactiveColor: inactiveColor,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(
+              items.length,
+              (index) => _NavBarItem(
+                icon: items[index].icon,
+                label: items[index].label,
+                isActive: currentIndex == index,
+                onTap: () => onTap(index),
+                activeColor: activeColor,
+                inactiveColor: inactiveColor,
+              ),
             ),
           ),
         ),

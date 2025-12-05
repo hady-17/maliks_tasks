@@ -22,7 +22,7 @@ class TaskCard extends StatelessWidget {
     final isCompleted = task.status == 'done';
 
     return Card(
-      color: cardColor ?? Colors.red.shade300,
+      color: cardColor ?? Color(0xFF8C7E7E),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
