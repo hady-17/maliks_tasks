@@ -22,20 +22,24 @@ class CreateTask extends StatefulWidget {
 class _CreateTaskState extends State<CreateTask> {
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
+  late final TextEditingController _assignController;
   String _priority = 'normal';
   int _currentIndex = 2;
+  DateTime _taskDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
     _descController = TextEditingController();
+    _assignController = TextEditingController();
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
+    _assignController.dispose();
     super.dispose();
   }
 
@@ -44,6 +48,9 @@ class _CreateTaskState extends State<CreateTask> {
     final Map<String, dynamic> task = Map<String, dynamic>.from(baseTask);
     task['title'] = _titleController.text.trim();
     task['description'] = _descController.text.trim();
+    task['task_date'] = _taskDate;
+    // Use the editable Assign To UUID from controller
+    task['assigned_to'] = _assignController.text.trim();
     // Normalize priority
     if (task['priority'] is String)
       task['priority'] = (_priority).toLowerCase();
@@ -74,80 +81,279 @@ class _CreateTaskState extends State<CreateTask> {
       'assignee': userId,
     };
 
+    // set default assign-to UUID if controller is empty
+    if ((userId ?? '').isNotEmpty && _assignController.text.isEmpty) {
+      _assignController.text = userId!;
+    }
+
     return Scaffold(
+      extendBody: true,
       appBar: ModernAppBar(
         title: 'Create Task',
-        subtitle: 'your tasks with one click',
+        subtitle: 'Create tasks quickly',
         showBackButton: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: p == null
-            ? const Center(child: Text('No profile provided'))
-            : Card(
-                color: Colors.red.shade200,
-                elevation: 10,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+      body: p == null
+          ? const Center(child: Text('No profile provided'))
+          : Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF6F8FA), Color(0xFFFDECEA)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildTextField('Title', _titleController, true),
-                      const SizedBox(height: 16),
-                      _buildTextField('Description', _descController, true),
-                      const SizedBox(height: 16),
-
-                      const SizedBox(height: 16),
-                      _buildDropdownField(
-                        'Priority',
-                        ['low', 'normal', 'high'],
-                        _priority,
-                        true,
-                        onChanged: (val) {
-                          if (val != null) setState(() => _priority = val);
-                        },
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: SingleChildScrollView(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: Card(
+                      elevation: 14,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(height: 24),
-                      Center(
-                        child: _buildSubmitButton(
-                          baseTask,
-                          onPressed: () => _onSubmit(baseTask),
+                      clipBehavior: Clip.hardEdge,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'New Task',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Fill the details below to create a task',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 18),
+
+                            _buildTextField('Title', _titleController, true),
+                            const SizedBox(height: 12),
+
+                            _buildTextField(
+                              'Description',
+                              _descController,
+                              true,
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Date and Priority row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final d = await showDatePicker(
+                                        context: context,
+                                        initialDate: _taskDate,
+                                        firstDate: DateTime.now().subtract(
+                                          const Duration(days: 365),
+                                        ),
+                                        lastDate: DateTime.now().add(
+                                          const Duration(days: 365),
+                                        ),
+                                      );
+                                      if (d != null)
+                                        setState(() => _taskDate = d);
+                                    },
+                                    child: AbsorbPointer(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Date',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          // Styled read-only date field that scales text to fit
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                              horizontal: 12,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: Colors.grey.shade400,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.calendar_today_rounded,
+                                                  size: 20,
+                                                  color: Colors.black54,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Text(
+                                                      _taskDate
+                                                          .toIso8601String()
+                                                          .substring(0, 10),
+                                                      style: const TextStyle(
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Priority',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: ['low', 'normal', 'high'].map((
+                                          opt,
+                                        ) {
+                                          final active = _priority == opt;
+                                          return Expanded(
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                right: 6.0,
+                                              ),
+                                              child: ElevatedButton(
+                                                onPressed: () => setState(
+                                                  () => _priority = opt,
+                                                ),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: active
+                                                      ? Colors.red.shade800
+                                                      : Colors.grey.shade200,
+                                                  foregroundColor: active
+                                                      ? Colors.white
+                                                      : Colors.black87,
+                                                  elevation: active ? 4 : 0,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 12,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  child: Text(
+                                                    opt[0].toUpperCase() +
+                                                        opt.substring(1),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // optional assignee field (editable UUID)
+                            _buildTextField(
+                              'Assign To (UUID)',
+                              _assignController,
+                              false,
+                            ),
+
+                            const SizedBox(height: 22),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildSubmitButton(
+                                    baseTask,
+                                    onPressed: () => _onSubmit(baseTask),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                OutlinedButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text('Cancel'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: ModernNavBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            if (index == 1) {
-            } else if (index == 2) {
-              Navigator.pushNamed(context, '/create_task', arguments: p);
-            } else if (index == 3) {
-              print('pressed on $index');
-            } else if (index == 4) {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/profile',
-                (route) => false,
-                arguments: p,
-              );
-            } else {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/home',
-                (route) => false,
-                arguments: p,
-              );
-            }
-          },
-        ),
+            ),
+      bottomNavigationBar: ModernNavBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 1) {
+          } else if (index == 2) {
+            Navigator.pushNamed(context, '/create_task', arguments: p);
+          } else if (index == 3) {
+            print('pressed on $index');
+          } else if (index == 4) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/profile',
+              (route) => false,
+              arguments: p,
+            );
+          } else {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+              arguments: p,
+            );
+          }
+        },
       ),
     );
   }
