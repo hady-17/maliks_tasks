@@ -4,11 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/appBar.dart';
 import '../widgets/navBar.dart';
 
-/// Simple profile page that accepts a `profile` Map either via the
-/// constructor or via route arguments. Useful after login/sign-in to
-/// show user information.
+/// Modern Profile page
 class ProfilePage extends StatelessWidget {
-  final _cPage = 4;
+  final int _cPage = 4;
   final Map<String, dynamic>? profile;
   const ProfilePage({super.key, this.profile});
 
@@ -16,6 +14,7 @@ class ProfilePage extends StatelessWidget {
     if (profile != null) return profile;
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is Map<String, dynamic>) return args;
+    if (args is Map) return Map<String, dynamic>.from(args);
     return null;
   }
 
@@ -29,147 +28,283 @@ class ProfilePage extends StatelessWidget {
     if (context.mounted) Navigator.pushReplacementNamed(context, '/');
   }
 
+  Future<String> _fetchBranchName(String branchId) async {
+    if (branchId.isEmpty || branchId == '—') return branchId;
+    try {
+      final res = await Supabase.instance.client
+          .from('branches')
+          .select()
+          .eq('id', branchId)
+          .maybeSingle();
+
+      if (res != null) {
+        final map = Map<String, dynamic>.from(res);
+        if (map.containsKey('name') && map['name'] != null) {
+          return map['name'].toString();
+        }
+      }
+    } catch (_) {}
+    return branchId;
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _resolveProfile(context);
-    print('profile: $p');
-
-    if (p == null) {
+    if (p == null)
       return const Scaffold(body: Center(child: Text('No profile provided')));
-    }
 
     final displayName = p['full_name'] ?? p['name'] ?? p['email'] ?? 'User';
     final email = p['email'] ?? '—';
-    final id = p['id'] ?? '—';
     final branch = p['branch_id'] ?? '—';
     final section = p['section'] ?? '—';
     final role = p['role'] ?? '—';
 
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    final topInset = MediaQuery.of(context).viewPadding.top;
+
     return Scaffold(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       appBar: ModernAppBar(
         title: 'Profile',
         subtitle: 'View and edit your profile information',
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: Colors.grey.shade200,
-                  child: Text(
-                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                    style: const TextStyle(fontSize: 24, color: Colors.black87),
-                  ),
+            // Header
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(20, topInset + 85, 20, 28),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.red.shade900, Colors.red.shade400],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 44,
+                    backgroundColor: Colors.white24,
+                    child: Text(
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(fontSize: 28, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          email,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.white),
+                    onPressed: () {
+                      // TODO: edit profile
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // Info card
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 18.0,
+                    horizontal: 12.0,
+                  ),
+                  child: Column(
+                    children: [
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          // Email tile
+                          _infoTile(
+                            context,
+                            'Email',
+                            email,
+                            Icons.email_rounded,
+                          ),
+                          // Branch: fetch human readable name via API
+                          FutureBuilder<String>(
+                            future: _fetchBranchName(branch),
+                            builder: (context, snap) {
+                              final b =
+                                  (snap.connectionState ==
+                                          ConnectionState.done &&
+                                      snap.data != null)
+                                  ? snap.data!
+                                  : branch;
+                              return _infoTile(
+                                context,
+                                'Branch',
+                                b,
+                                Icons.location_city_rounded,
+                              );
+                            },
+                          ),
+                          _infoTile(
+                            context,
+                            'Section',
+                            section,
+                            Icons.view_column_rounded,
+                          ),
+                          _infoTile(context, 'Role', role, Icons.badge_rounded),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        email,
-                        style: TextStyle(color: Colors.grey.shade700),
+
+                      const SizedBox(height: 16),
+
+                      // actions
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade600,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () => _signOut(context),
+                              icon: const Icon(
+                                Icons.logout,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                'Sign Out',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          OutlinedButton(
+                            onPressed: () {
+                              // TODO: navigate to profile edit screen
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text('Edit'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
 
-            const SizedBox(height: 24),
-
-            _infoRow('ID', id),
-            const SizedBox(height: 8),
-            _infoRow('Branch', branch),
-            const SizedBox(height: 8),
-            _infoRow('Section', section),
-            const SizedBox(height: 8),
-            _infoRow('Role', role),
-
-            const Spacer(),
-
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade600,
-                    ),
-                    onPressed: () => _signOut(context),
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    label: const Text(
-                      'Sign Out',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: navigate to profile edit screen if present
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Edit'),
-                ),
-              ],
-            ),
+            // spacing so actions are not obscured by bottom nav
+            SizedBox(height: 70 + bottomInset + 8),
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: ModernNavBar(
-          currentIndex: _cPage,
-          onTap: (index) {
-            if (index == 1) {
-            } else if (index == 2) {
-              Navigator.pushNamed(context, '/create_task', arguments: p);
-            } else if (index == 3) {
-              print('pressed on $index');
-            } else if (index == 4) {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/profile',
-                (route) => false,
-                arguments: p,
-              );
-            } else {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/home',
-                (route) => false,
-                arguments: p,
-              );
-            }
-          },
-        ),
+      bottomNavigationBar: ModernNavBar(
+        currentIndex: _cPage,
+        onTap: (index) {
+          if (index == 1) {
+          } else if (index == 2) {
+            Navigator.pushNamed(context, '/create_task', arguments: p);
+          } else if (index == 3) {
+            print('pressed on $index');
+          } else if (index == 4) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/profile',
+              (route) => false,
+              arguments: p,
+            );
+          } else {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+              arguments: p,
+            );
+          }
+        },
       ),
     );
   }
 
-  Widget _infoRow(String label, String value) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 90,
-          child: Text(
-            '$label:',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+  Widget _infoTile(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
+    final screenW = MediaQuery.of(context).size.width;
+    final tileW = (screenW * 0.8) > 600 ? 600.0 : (screenW * 0.8);
+
+    return Container(
+      width: tileW,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.deepPurple),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-        ),
-        Expanded(child: Text(value)),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -136,8 +136,12 @@ class TaskProvider extends ChangeNotifier {
     required String branchId,
     required String section,
     required String userId,
+    String? taskDate,
+    String status = 'both', // 'both' | 'open' | 'done'
+    List<String>? priorities,
   }) {
-    final today = DateTime.now().toIso8601String().split('T').first;
+    final dateFilter =
+        taskDate ?? DateTime.now().toIso8601String().split('T').first;
     final safeSection = (section.isNotEmpty) ? section : '_NO_SECTION_';
 
     final stream = supabase.from('tasks').stream(primaryKey: ['id']);
@@ -148,11 +152,26 @@ class TaskProvider extends ChangeNotifier {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .where((row) {
             final matchesBranch = row['branch_id'] == branchId;
-            final matchesDate = row['task_date'] == today;
+            final matchesDate = row['task_date'] == dateFilter;
             final matchesUser =
                 row['assigned_to'] == userId ||
                 row['assigned_section'] == safeSection;
-            return matchesBranch && matchesDate && matchesUser;
+
+            if (!matchesBranch || !matchesDate || !matchesUser) return false;
+
+            // status filter
+            if (status != 'both') {
+              final s = (row['status'] ?? 'open').toString();
+              if (s != status) return false;
+            }
+
+            // priorities filter
+            if (priorities != null && priorities.isNotEmpty) {
+              final p = (row['priority'] ?? 'normal').toString();
+              if (!priorities.contains(p)) return false;
+            }
+
+            return true;
           })
           .map((row) => Task.fromJson(row))
           .toList();

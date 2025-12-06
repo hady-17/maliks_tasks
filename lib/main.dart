@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:maliks_tasks/viewmodels/task_provider.dart';
 import 'package:maliks_tasks/view/screens/create_task.dart';
 import 'package:maliks_tasks/view/screens/profile.dart';
+import 'package:provider/provider.dart';
+import 'package:maliks_tasks/view/widgets/filter_popup.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -17,7 +19,12 @@ void main() async {
     url: dotenv.env['project_url']!,
     anonKey: dotenv.env['anon_api_key']!,
   );
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => TaskProvider())],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
