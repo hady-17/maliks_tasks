@@ -35,7 +35,9 @@ class _LoginPageContentState extends State<_LoginPageContent> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Account created successfully!')),
       );
-      Navigator.pushReplacementNamed(context, '/home', arguments: profile);
+      final role = profile['role'] ?? 'member';
+      final route = (role == 'manager') ? '/manager_home' : '/home';
+      Navigator.pushReplacementNamed(context, route, arguments: profile);
     } else if (vm.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(vm.errorMessage!), backgroundColor: Colors.red),

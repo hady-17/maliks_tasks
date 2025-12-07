@@ -53,6 +53,7 @@ class LoginViewModel extends ChangeNotifier {
   ];
 
   final List<String> positions = [
+    'manager',
     'supervisor',
     'cashier',
     'stationary',
@@ -195,7 +196,14 @@ class LoginViewModel extends ChangeNotifier {
       final branchId = await _resolveBranchId(_selectedBranch!);
 
       // -----------------------------------------------------
-      // 3. Ensure profile exists, then update it
+      // 3. Determine role based on position
+      // -----------------------------------------------------
+      final role = (_selectedPosition == 'manager' || _selectedPosition == 'supervisor')
+          ? 'manager'
+          : 'member';
+
+      // -----------------------------------------------------
+      // 4. Ensure profile exists, then update it
       //    (Supabase may auto-create via trigger, or we insert if missing)
       // -----------------------------------------------------
 
@@ -214,6 +222,7 @@ class LoginViewModel extends ChangeNotifier {
           'section': _selectedPosition,
           'branch_id': branchId,
           'shift': _selectedShift!.toLowerCase(),
+          'role': role,
         });
       } else {
         // Profile exists (created by trigger), update it
@@ -224,12 +233,13 @@ class LoginViewModel extends ChangeNotifier {
               'section': _selectedPosition,
               'branch_id': branchId,
               'shift': _selectedShift!.toLowerCase(),
+              'role': role,
             })
             .eq('id', userId);
       }
 
       // -----------------------------------------------------
-      // 4. Fetch and return the new profile data
+      // 5. Fetch and return the new profile data
       // -----------------------------------------------------
       final profile = await supabase
           .from('profiles')

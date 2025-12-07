@@ -8,10 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:maliks_tasks/viewmodels/task_provider.dart';
+import 'package:maliks_tasks/viewmodels/managerProvider.dart';
 import 'package:maliks_tasks/view/screens/create_task.dart';
 import 'package:maliks_tasks/view/screens/profile.dart';
-import 'package:provider/provider.dart';
-import 'package:maliks_tasks/view/widgets/filter_popup.dart';
+import './view/screens/manager_homeScreen.dart';
+import './view/screens/managerCreateTask.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -21,7 +22,10 @@ void main() async {
   );
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => TaskProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => ManagerTaskProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -48,6 +52,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/create_task': (context) => const CreateTask(),
         '/profile': (context) => const ProfilePage(),
+        '/manager_home': (context) => const ManagerHomescreen(),
+        '/manager_create_task': (context) => const ManagerCreateTaskScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
@@ -118,13 +124,15 @@ class _RootPageState extends State<RootPage> {
 
       if (!mounted) return;
 
-      // Navigate to /home with profile as arguments
+      // Navigate based on role: managers to /manager_home, members to /home
+      final role = profile['role'] ?? 'member';
+      final route = (role == 'manager') ? '/manager_home' : '/home';
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, '/home', arguments: profile);
+        Navigator.pushReplacementNamed(context, route, arguments: profile);
       });
     } catch (e) {
       if (!mounted) return;
-      final profile = {'id': user.id, 'email': user.email};
+      final profile = {'id': user.id, 'email': user.email, 'role': 'member'};
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/home', arguments: profile);
       });

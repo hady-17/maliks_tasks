@@ -239,26 +239,56 @@ class ProfilePage extends StatelessWidget {
       bottomNavigationBar: ModernNavBar(
         currentIndex: _cPage,
         onTap: (index) {
-          if (index == 1) {
-          } else if (index == 2) {
-            Navigator.pushNamed(context, '/create_task', arguments: p);
-          } else if (index == 3) {
-            print('pressed on $index');
-          } else if (index == 4) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/profile',
-              (route) => false,
-              arguments: p,
-            );
+          if (role == 'manager') {
+            if (index == 1) {
+            } else if (index == 2) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/manager_create_task',
+                (route) => false,
+                arguments: p,
+              );
+            } else if (index == 3) {
+              print('pressed on $index');
+            } else if (index == 4) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/profile',
+                (route) => false,
+                arguments: p,
+              );
+            } else {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/manager_home',
+                (route) => false,
+                arguments: p,
+              );
+            }
+            return;
           } else {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/home',
-              (route) => false,
-              arguments: p,
-            );
+            if (index == 1) {
+            } else if (index == 2) {
+              Navigator.pushNamed(context, '/create_task', arguments: p);
+            } else if (index == 3) {
+              print('pressed on $index');
+            } else if (index == 4) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/profile',
+                (route) => false,
+                arguments: p,
+              );
+            } else {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                (route) => false,
+                arguments: p,
+              );
+            }
           }
+          ;
         },
       ),
     );

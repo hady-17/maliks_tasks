@@ -4,19 +4,19 @@ import 'package:maliks_tasks/view/widgets/appBar.dart';
 import 'package:maliks_tasks/view/widgets/navBar.dart';
 import 'package:maliks_tasks/view/widgets/taskCard.dart';
 import '../../model/task/tasks.dart';
-import '../../viewmodels/task_provider.dart';
+import '../../viewmodels/managerProvider.dart';
 import 'package:calendar_timeline/calendar_timeline.dart';
 import '../../view/widgets/filter_popup.dart';
 
-class HomePage extends StatefulWidget {
+class ManagerHomescreen extends StatefulWidget {
   final Map<String, dynamic>? profile;
-  const HomePage({super.key, this.profile});
+  const ManagerHomescreen({super.key, this.profile});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _ManagerHomescreenState createState() => _ManagerHomescreenState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ManagerHomescreenState extends State<ManagerHomescreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _filters;
   DateTime _selectedDate = DateTime.now();
@@ -28,17 +28,132 @@ class _HomePageState extends State<HomePage> {
     return null;
   }
 
+  void _showEditDialog(BuildContext context, Task task) {
+    final titleController = TextEditingController(text: task.title);
+    final descController = TextEditingController(text: task.description);
+    String selectedStatus = task.status;
+    String selectedPriority = task.priority;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Task'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descController,
+                decoration: const InputDecoration(labelText: 'Description'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedStatus,
+                decoration: const InputDecoration(labelText: 'Status'),
+                items: ['open', 'done']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => selectedStatus = v!,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedPriority,
+                decoration: const InputDecoration(labelText: 'Priority'),
+                items: ['low', 'normal', 'high']
+                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                    .toList(),
+                onChanged: (v) => selectedPriority = v!,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final updates = {
+                'title': titleController.text.trim(),
+                'description': descController.text.trim(),
+                'status': selectedStatus,
+                'priority': selectedPriority,
+              };
+              final provider = Provider.of<ManagerTaskProvider>(
+                ctx,
+                listen: false,
+              );
+              final messenger = ScaffoldMessenger.maybeOf(ctx);
+              final success = await provider.updateTask(task.id, updates);
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+                messenger?.showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'Task updated!' : 'Update failed'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, Task task) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: Text('Are you sure you want to delete "${task.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              final provider = Provider.of<ManagerTaskProvider>(
+                ctx,
+                listen: false,
+              );
+              final messenger = ScaffoldMessenger.maybeOf(ctx);
+              final success = await provider.deleteTask(task.id);
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+                messenger?.showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'Task deleted!' : 'Delete failed'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _resolveProfile(context);
-    print('Profile in HomePage: $p');
 
     if (p == null) {
       return const Scaffold(body: Center(child: Text('No profile provided')));
     }
 
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-    // Compute bottom inset and nav bar height so we can pad the list
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     final navBarHeight = 70.0 + bottomInset;
     final topInset = MediaQuery.of(context).viewPadding.top;
@@ -47,8 +162,8 @@ class _HomePageState extends State<HomePage> {
       extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: ModernAppBar(
-        title: 'Tasks',
-        subtitle: 'All your tasks at a glance',
+        title: 'Manager Dashboard',
+        subtitle: 'Manage all branch tasks',
         showBackButton: false,
         showSearchButton: true,
       ),
@@ -68,19 +183,18 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Today\'s Tasks',
+                  'All Branch Tasks',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Row(
                   children: [
                     const Text(
-                      'Filter ur tasks',
+                      'Filter tasks',
                       style: TextStyle(color: Colors.black),
                     ),
                     const SizedBox(width: 4),
                     IconButton(
                       onPressed: () {
-                        // Open filter popup
                         Map<String, dynamic>? pending;
                         showDialog(
                           context: context,
@@ -102,7 +216,6 @@ class _HomePageState extends State<HomePage> {
                           ),
                         );
                       },
-
                       icon: const Icon(
                         Icons.filter_list_alt,
                         color: Colors.black,
@@ -131,19 +244,23 @@ class _HomePageState extends State<HomePage> {
               showYears: false,
             ),
             const SizedBox(height: 16),
-            // Expanded ensures the StreamBuilder and its ListView get a bounded height
             Expanded(
               child: StreamBuilder<List<Task>>(
-                stream: taskProvider.watchTodayTasks(
-                  branchId: p['branch_id'],
-                  section: p['section'] ?? '',
-                  userId: p['id'],
-                  taskDate: _selectedDate.toIso8601String().split('T').first,
-                  status: _filters?['status'] ?? 'both',
-                  priorities: _filters != null
-                      ? List<String>.from(_filters!['priorities'] ?? ['normal'])
-                      : null,
-                ),
+                stream: Provider.of<ManagerTaskProvider>(context, listen: false)
+                    .watchAllTasks(
+                      branchId:
+                          p['branch_id'], // Can be null to see all branches
+                      taskDate: _selectedDate
+                          .toIso8601String()
+                          .split('T')
+                          .first,
+                      status: _filters?['status'] ?? 'both',
+                      priorities: _filters != null
+                          ? List<String>.from(
+                              _filters!['priorities'] ?? ['normal'],
+                            )
+                          : null,
+                    ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -156,7 +273,12 @@ class _HomePageState extends State<HomePage> {
                   final tasks = snapshot.data ?? [];
 
                   if (tasks.isEmpty) {
-                    return const Center(child: Text('No tasks for today'));
+                    return const Center(
+                      child: Text(
+                        'No tasks found for this date',
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                    );
                   }
 
                   return ListView.builder(
@@ -166,15 +288,16 @@ class _HomePageState extends State<HomePage> {
                       return TaskCard(
                         task: tasks[index],
                         onComplete: () {
-                          taskProvider.toggleTaskDone(tasks[index].id);
+                          Provider.of<ManagerTaskProvider>(
+                            context,
+                            listen: false,
+                          ).toggleTaskDone(tasks[index].id);
                         },
                         onEdit: () {
-                          // TODO: Implement edit task functionality
-                          print('Edit task: ${tasks[index].id}');
+                          _showEditDialog(context, tasks[index]);
                         },
                         onTap: () {
-                          // TODO: Implement task details navigation
-                          print('View task details: ${tasks[index].id}');
+                          _showDeleteDialog(context, tasks[index]);
                         },
                       );
                     },
@@ -190,7 +313,7 @@ class _HomePageState extends State<HomePage> {
         onTap: (index) {
           if (index == 1) {
           } else if (index == 2) {
-            Navigator.pushNamed(context, '/create_task', arguments: p);
+            Navigator.pushNamed(context, '/manager_create_task', arguments: p);
           } else if (index == 3) {
             print('pressed on $index');
           } else if (index == 4) {
@@ -203,7 +326,7 @@ class _HomePageState extends State<HomePage> {
           } else {
             Navigator.pushNamedAndRemoveUntil(
               context,
-              '/home',
+              '/manager_home',
               (route) => false,
               arguments: p,
             );

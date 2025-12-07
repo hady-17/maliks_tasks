@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../const.dart';
+
 import '../../view/widgets/appBar.dart';
 import '../../view/widgets/navBar.dart';
 
@@ -404,58 +404,6 @@ Widget _buildTextField(
         ),
         keyboardType: TextInputType.text,
         textInputAction: TextInputAction.next,
-      ),
-    ],
-  );
-}
-
-Widget _buildDropdownField(
-  String label,
-  List<String> options,
-  String? selectedValue,
-  bool enabled, {
-  ValueChanged<String?>? onChanged,
-}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: enabled ? Colors.red.shade900 : Colors.grey.shade600,
-          fontWeight: FontWeight.w700,
-          fontSize: 14.0,
-          fontFamily: 'Roboto',
-          letterSpacing: 0.25,
-        ),
-      ),
-      const SizedBox(height: 8),
-      DropdownButtonFormField<String>(
-        initialValue: selectedValue,
-        items: options
-            .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
-            .toList(),
-        onChanged: enabled ? onChanged : null,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: enabled ? Colors.white : Colors.grey.shade200,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade400),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.red.shade600, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 12.0,
-            horizontal: 16.0,
-          ),
-        ),
-        style: TextStyle(
-          color: enabled ? Colors.black : Colors.grey.shade600,
-          fontSize: 16,
-        ),
       ),
     ],
   );
