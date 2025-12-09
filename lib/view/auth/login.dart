@@ -349,7 +349,7 @@ class _LoginPageContentState extends State<_LoginPageContent> {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         hint: Text(hint),
         decoration: const InputDecoration(border: InputBorder.none),
         items: items

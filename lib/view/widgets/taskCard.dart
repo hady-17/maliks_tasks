@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../model/task/tasks.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+// Simple in-memory cache for profile id -> display name to avoid repeated DB calls.
+final Map<String, String> _profileNameCache = {};
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -122,7 +126,12 @@ class TaskCard extends StatelessWidget {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         _metaChip(Icons.calendar_today_rounded, task.taskDate),
-                        _metaChip(Icons.person_rounded, task.assignedTo ?? ''),
+                        _profileChip(Icons.person_rounded, task.assignedTo),
+                        if (task.doneByUser != null)
+                          _profileChip(
+                            Icons.check_circle_outline,
+                            task.doneByUser,
+                          ),
                         // status pill
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -190,6 +199,62 @@ class TaskCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // (removed old _doneByLabel — replaced by profile-aware chips)
+
+  /// A small chip that shows a profile name (fetched from `profiles.full_name`)
+  /// for the given `userId`. If `userId` is null or empty, shows 'Unassigned'.
+  Widget _profileChip(IconData icon, String? userId) {
+    if (userId == null || userId.trim().isEmpty) {
+      return _metaChip(icon, 'Unassigned');
+    }
+
+    final currentId = Supabase.instance.client.auth.currentUser?.id;
+    // If it's the current user, show 'You' immediately
+    if (currentId != null && currentId == userId) {
+      return _metaChip(icon, 'You');
+    }
+
+    return FutureBuilder<String>(
+      future: _fetchProfileName(userId),
+      builder: (context, snap) {
+        String text;
+        if (snap.connectionState == ConnectionState.waiting) {
+          text = '...';
+        } else if (snap.hasData && (snap.data?.trim().isNotEmpty ?? false)) {
+          text = snap.data!;
+        } else {
+          // fallback to shortened id
+          final short = (userId.length >= 8) ? userId.substring(0, 8) : userId;
+          text = 'By $short';
+        }
+
+        return _metaChip(icon, text);
+      },
+    );
+  }
+
+  Future<String> _fetchProfileName(String userId) async {
+    // Return cached if available
+    if (_profileNameCache.containsKey(userId))
+      return _profileNameCache[userId]!;
+
+    try {
+      final client = Supabase.instance.client;
+      final resp = await client
+          .from('profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .maybeSingle();
+      if (resp != null && resp['full_name'] != null) {
+        final name = resp['full_name'] as String;
+        _profileNameCache[userId] = name;
+        return name;
+      }
+    } catch (_) {}
+
+    return '';
   }
 
   // removed unused _priorityDot

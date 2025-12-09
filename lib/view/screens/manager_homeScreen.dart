@@ -7,6 +7,8 @@ import '../../model/task/tasks.dart';
 import '../../viewmodels/managerProvider.dart';
 import 'package:calendar_timeline/calendar_timeline.dart';
 import '../../view/widgets/filter_popup.dart';
+import '../widgets/done_by_selector.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ManagerHomescreen extends StatefulWidget {
   final Map<String, dynamic>? profile;
@@ -17,7 +19,7 @@ class ManagerHomescreen extends StatefulWidget {
 }
 
 class _ManagerHomescreenState extends State<ManagerHomescreen> {
-  int _currentIndex = 0;
+  final int _currentIndex = 0;
   Map<String, dynamic>? _filters;
   DateTime _selectedDate = DateTime.now();
 
@@ -29,10 +31,12 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
   }
 
   void _showEditDialog(BuildContext context, Task task) {
+    final profile = _resolveProfile(context);
     final titleController = TextEditingController(text: task.title);
     final descController = TextEditingController(text: task.description);
     String selectedStatus = task.status;
     String selectedPriority = task.priority;
+    String? selectedDoneBy = task.doneByUser;
 
     showDialog(
       context: context,
@@ -54,7 +58,7 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedStatus,
+                initialValue: selectedStatus,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: ['open', 'done']
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -63,12 +67,49 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedPriority,
+                initialValue: selectedPriority,
                 decoration: const InputDecoration(labelText: 'Priority'),
                 items: ['low', 'normal', 'high']
                     .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                     .toList(),
                 onChanged: (v) => selectedPriority = v!,
+              ),
+              const SizedBox(height: 12),
+              // Manager: choose who marked the task done (optional). We fetch branch members.
+              FutureBuilder<List<Map<String, String>>>(
+                future: () async {
+                  try {
+                    final client = Supabase.instance.client;
+                    final branchId = profile?['branch_id'] as String?;
+                    if (branchId == null) return <Map<String, String>>[];
+                    final res = await client
+                        .from('profiles')
+                        .select('id, full_name, section')
+                        .eq('branch_id', branchId)
+                        .order('full_name');
+                    final list = res as List<dynamic>? ?? [];
+                    return list
+                        .map(
+                          (u) => {
+                            'id': u['id'] as String,
+                            'name': u['full_name'] as String? ?? '(no name)',
+                            'section': u['section'] as String? ?? '',
+                          },
+                        )
+                        .toList();
+                  } catch (_) {
+                    return <Map<String, String>>[];
+                  }
+                }(),
+                builder: (ctx, snap) {
+                  final members = snap.data ?? [];
+                  return DoneBySelector(
+                    members: members,
+                    managerId: profile?['id'] as String? ?? '',
+                    initialSelectedId: selectedDoneBy,
+                    onChanged: (v) => selectedDoneBy = v,
+                  );
+                },
               ),
             ],
           ),
@@ -80,12 +121,21 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final updates = {
+              final updates = <String, dynamic>{
                 'title': titleController.text.trim(),
                 'description': descController.text.trim(),
                 'status': selectedStatus,
                 'priority': selectedPriority,
               };
+
+              // Business rules: if manager sets status to 'open', clear done_by_user.
+              if (selectedStatus == 'open') {
+                updates['done_by_user'] = null;
+              } else if (selectedDoneBy != null) {
+                // Manager explicitly chose who marked the task done.
+                updates['done_by_user'] = selectedDoneBy;
+              }
+
               final provider = Provider.of<ManagerTaskProvider>(
                 ctx,
                 listen: false,

@@ -24,7 +24,7 @@ class _CreateTaskState extends State<CreateTask> {
   late final TextEditingController _descController;
   late final TextEditingController _assignController;
   String _priority = 'normal';
-  int _currentIndex = 2;
+  final int _currentIndex = 2;
   DateTime _taskDate = DateTime.now();
 
   @override
@@ -52,8 +52,9 @@ class _CreateTaskState extends State<CreateTask> {
     // Use the editable Assign To UUID from controller
     task['assigned_to'] = _assignController.text.trim();
     // Normalize priority
-    if (task['priority'] is String)
+    if (task['priority'] is String) {
       task['priority'] = (_priority).toLowerCase();
+    }
 
     await submitTask(task);
     // After submission, navigate back or show confirmation
@@ -157,8 +158,9 @@ class _CreateTaskState extends State<CreateTask> {
                                           const Duration(days: 365),
                                         ),
                                       );
-                                      if (d != null)
+                                      if (d != null) {
                                         setState(() => _taskDate = d);
+                                      }
                                     },
                                     child: AbsorbPointer(
                                       child: Column(

@@ -50,8 +50,9 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = _resolveProfile(context);
-    if (p == null)
+    if (p == null) {
       return const Scaffold(body: Center(child: Text('No profile provided')));
+    }
 
     final displayName = p['full_name'] ?? p['name'] ?? p['email'] ?? 'User';
     final email = p['email'] ?? '—';
@@ -288,7 +289,6 @@ class ProfilePage extends StatelessWidget {
               );
             }
           }
-          ;
         },
       ),
     );

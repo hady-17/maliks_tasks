@@ -71,6 +71,7 @@ class TaskProvider extends ChangeNotifier {
   // ---------------------------------------------------------
   // Mark task as done
   // ---------------------------------------------------------
+  /// Toggle task done/open for generic use. Keeps backward compatibility.
   Future<void> toggleTaskDone(String taskId) async {
     try {
       // Determine current status (prefer local copy, fallback to DB)
@@ -92,14 +93,27 @@ class TaskProvider extends ChangeNotifier {
       // Toggle: if currently 'done' -> set to 'open', otherwise set to 'done'
       final newStatus = (currentStatus == 'done') ? 'open' : 'done';
 
-      await supabase
-          .from('tasks')
-          .update({'status': newStatus})
-          .eq('id', taskId);
+      // Determine current user id from the Supabase client
+      final currentUserId =
+          supabase?.auth.currentUser?.id ??
+          Supabase.instance.client.auth.currentUser?.id;
+
+      // If marking as done, set done_by_user to the current user's id.
+      // If reverting to open, clear done_by_user (send explicit null).
+      final updatePayload = {
+        'status': newStatus,
+        'done_by_user': newStatus == 'done' ? currentUserId : null,
+      };
+
+      await supabase.from('tasks').update(updatePayload).eq('id', taskId);
 
       // Update local list if present
+      final newDoneBy = (newStatus == 'done') ? currentUserId as String? : null;
       if (index != -1) {
-        _tasks[index] = _tasks[index].copyWith(status: newStatus);
+        _tasks[index] = _tasks[index].copyWith(
+          status: newStatus,
+          doneByUser: newDoneBy,
+        );
         notifyListeners();
       } else {
         // If not in local list, keep state untouched but still notify in case UI wants refresh
@@ -107,6 +121,55 @@ class TaskProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Error toggling task status: $e");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Team member API: mark task as done (must set done_by_user to current user)
+  // ---------------------------------------------------------
+  Future<bool> markTaskAsDone(String taskId, String currentUserId) async {
+    try {
+      final payload = {'status': 'done', 'done_by_user': currentUserId};
+
+      await supabase.from('tasks').update(payload).eq('id', taskId);
+
+      // Update local list if present
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        _tasks[index] = _tasks[index].copyWith(
+          status: 'done',
+          doneByUser: currentUserId,
+        );
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Error markTaskAsDone: $e');
+      return false;
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Team member API: reopen task (clear done_by_user)
+  // ---------------------------------------------------------
+  Future<bool> reopenTask(String taskId) async {
+    try {
+      final payload = {'status': 'open', 'done_by_user': null};
+
+      await supabase.from('tasks').update(payload).eq('id', taskId);
+
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        _tasks[index] = _tasks[index].copyWith(
+          status: 'open',
+          doneByUser: null,
+        );
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Error reopenTask: $e');
+      return false;
     }
   }
 

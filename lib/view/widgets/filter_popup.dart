@@ -6,7 +6,12 @@ class FilterPopup extends StatelessWidget {
   final VoidCallback? onApply;
   final VoidCallback? onCancel;
 
-  const FilterPopup({Key? key, required this.child, this.onApply, this.onCancel}) : super(key: key);
+  const FilterPopup({
+    super.key,
+    required this.child,
+    this.onApply,
+    this.onCancel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +29,10 @@ class FilterPopup extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Filter Tasks', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    'Filter Tasks',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
@@ -69,11 +77,11 @@ class TaskFilter extends StatefulWidget {
   final ValueChanged<Map<String, dynamic>>? onChanged;
 
   const TaskFilter({
-    Key? key,
+    super.key,
     this.initialStatus = 'both',
     this.initialPriorities = const {'normal'},
     this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<TaskFilter> createState() => _TaskFilterState();
@@ -94,7 +102,10 @@ class _TaskFilterState extends State<TaskFilter> {
   }
 
   void _notify() {
-    widget.onChanged?.call({'status': _status, 'priorities': _priorities.toList()});
+    widget.onChanged?.call({
+      'status': _status,
+      'priorities': _priorities.toList(),
+    });
   }
 
   void _togglePriority(String p) {
@@ -159,7 +170,9 @@ class _TaskFilterState extends State<TaskFilter> {
               onSelected: (_) => _togglePriority(p),
               selectedColor: Theme.of(context).colorScheme.primary,
               backgroundColor: Colors.grey.shade200,
-              labelStyle: TextStyle(color: selected ? Colors.white : Colors.black87),
+              labelStyle: TextStyle(
+                color: selected ? Colors.white : Colors.black87,
+              ),
             );
           }).toList(),
         ),
@@ -167,4 +180,3 @@ class _TaskFilterState extends State<TaskFilter> {
     );
   }
 }
-

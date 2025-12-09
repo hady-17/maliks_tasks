@@ -130,6 +130,70 @@ class ManagerCreateTaskVM extends ChangeNotifier {
     }
   }
 
+  /// Generic manager update helper. `updates` are merged into the payload.
+  /// If `selectedDoneByUser` is provided, it will set `done_by_user` explicitly.
+  /// If `setDoneByNull` is true, `done_by_user` will be set to null (useful for reopening).
+  Future<bool> updateTask(
+    String taskId, {
+    Map<String, dynamic>? updates,
+    String? selectedDoneByUser,
+    bool setDoneByNull = false,
+  }) async {
+    try {
+      isLoading = true;
+      notifyListeners();
+      final client = Supabase.instance.client;
+
+      final payload = <String, dynamic>{};
+      if (updates != null) payload.addAll(updates);
+
+      if (selectedDoneByUser != null) {
+        payload['done_by_user'] = selectedDoneByUser;
+      } else if (setDoneByNull) {
+        payload['done_by_user'] = null;
+      }
+
+      // Remove null or empty-string fields to avoid DB constraint failures
+      payload.removeWhere(
+        (k, v) => v == null || (v is String && v.trim().isEmpty),
+      );
+
+      await client.from('tasks').update(payload).eq('id', taskId);
+
+      isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      error = e.toString();
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Manager marks a task done. Manager can optionally set `selectedDoneByUser` to
+  /// attribute completion to another member. If omitted, defaults to manager (`createdBy`).
+  Future<bool> managerMarkDone(
+    String taskId, {
+    String? selectedDoneByUser,
+  }) async {
+    final who = selectedDoneByUser ?? createdBy;
+    return await updateTask(
+      taskId,
+      updates: {'status': 'done'},
+      selectedDoneByUser: who,
+    );
+  }
+
+  /// Manager reopens a task and clears `done_by_user`.
+  Future<bool> managerReopenTask(String taskId) async {
+    return await updateTask(
+      taskId,
+      updates: {'status': 'open'},
+      setDoneByNull: true,
+    );
+  }
+
   void disposeControllers() {
     titleController.dispose();
     descController.dispose();

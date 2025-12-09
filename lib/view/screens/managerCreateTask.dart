@@ -207,8 +207,9 @@ class _ManagerCreateTaskContent extends StatelessWidget {
                                                     const Duration(days: 365),
                                                   ),
                                                 );
-                                                if (d != null)
+                                                if (d != null) {
                                                   vm.setTaskDate(d);
+                                                }
                                               },
                                               icon: const Icon(
                                                 Icons.calendar_today_outlined,
@@ -245,7 +246,7 @@ class _ManagerCreateTaskContent extends StatelessWidget {
                                                           BorderSide.none,
                                                     ),
                                                   ),
-                                                  value:
+                                                  initialValue:
                                                       (vm
                                                               .taskShift
                                                               .isNotEmpty &&
@@ -356,7 +357,7 @@ class _ManagerCreateTaskContent extends StatelessWidget {
                                             borderSide: BorderSide.none,
                                           ),
                                         ),
-                                        value: vm.assignedTo,
+                                        initialValue: vm.assignedTo,
                                         items:
                                             [
                                                   const DropdownMenuItem<
@@ -393,8 +394,9 @@ class _ManagerCreateTaskContent extends StatelessWidget {
                                                   : () async {
                                                       final ok = await vm
                                                           .createTask();
-                                                      if (!context.mounted)
+                                                      if (!context.mounted) {
                                                         return;
+                                                      }
                                                       if (ok) {
                                                         ScaffoldMessenger.maybeOf(
                                                           context,

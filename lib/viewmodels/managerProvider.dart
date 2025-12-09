@@ -9,7 +9,7 @@ class ManagerTaskProvider extends ChangeNotifier {
     : supabase = supabaseClient ?? Supabase.instance.client;
 
   List<Task> _tasks = [];
-  bool _isLoading = false;
+  final bool _isLoading = false;
   String? _error;
 
   // Getters
@@ -145,10 +145,16 @@ class ManagerTaskProvider extends ChangeNotifier {
       final currentStatus = resp['status'] as String?;
       final newStatus = (currentStatus == 'done') ? 'open' : 'done';
 
-      await supabase
-          .from('tasks')
-          .update({'status': newStatus})
-          .eq('id', taskId);
+      final currentUserId =
+          supabase?.auth.currentUser?.id ??
+          Supabase.instance.client.auth.currentUser?.id;
+
+      final updatePayload = {
+        'status': newStatus,
+        'done_by_user': newStatus == 'done' ? currentUserId : null,
+      };
+
+      await supabase.from('tasks').update(updatePayload).eq('id', taskId);
 
       notifyListeners();
     } catch (e) {

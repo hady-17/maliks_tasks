@@ -7,6 +7,7 @@ class Task {
   final String shift;
   final String? assignedSection;
   final String? assignedTo;
+  final String? doneByUser;
   final String taskDate;
 
   Task({
@@ -18,6 +19,7 @@ class Task {
     required this.shift,
     this.assignedSection,
     this.assignedTo,
+    this.doneByUser,
     required this.taskDate,
   });
 
@@ -31,6 +33,7 @@ class Task {
       shift: json['shift'],
       assignedSection: json['assigned_section'],
       assignedTo: json['assigned_to'],
+      doneByUser: json['done_by_user'],
       taskDate: json['task_date'],
     );
   }
@@ -45,6 +48,7 @@ class Task {
     String? shift,
     String? assignedSection,
     String? assignedTo,
+    String? doneByUser,
     String? taskDate,
   }) {
     return Task(
@@ -56,6 +60,7 @@ class Task {
       shift: shift ?? this.shift,
       assignedSection: assignedSection ?? this.assignedSection,
       assignedTo: assignedTo ?? this.assignedTo,
+      doneByUser: doneByUser ?? this.doneByUser,
       taskDate: taskDate ?? this.taskDate,
     );
   }
