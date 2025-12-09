@@ -22,12 +22,56 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
   final int _currentIndex = 0;
   Map<String, dynamic>? _filters;
   DateTime _selectedDate = DateTime.now();
+  // Preloaded lists to avoid popup delay
+  List<Map<String, String>> _preloadedMembers = [];
+  List<String> _preloadedSections = [];
 
   Map<String, dynamic>? _resolveProfile(BuildContext context) {
     if (widget.profile != null) return widget.profile;
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is Map<String, dynamic>) return args;
     return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Defer fetching until first frame so context/route args are available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = _resolveProfile(context);
+      final branchId = profile?['branch_id'] as String?;
+      if (branchId != null && branchId.isNotEmpty) {
+        _preloadMembersAndSections(branchId);
+      }
+    });
+  }
+
+  Future<void> _preloadMembersAndSections(String branchId) async {
+    try {
+      final client = Supabase.instance.client;
+      final res = await client
+          .from('profiles')
+          .select('id, full_name, section')
+          .eq('branch_id', branchId)
+          .order('full_name');
+      final list = res as List<dynamic>? ?? [];
+      final members = <Map<String, String>>[];
+      final sections = <String>[];
+      for (final u in list) {
+        final id = u['id'] as String?;
+        final name = u['full_name'] as String? ?? '(no name)';
+        final sec = u['section'] as String? ?? '';
+        if (id != null) members.add({'id': id, 'name': name});
+        if (sec.trim().isNotEmpty && !sections.contains(sec)) sections.add(sec);
+      }
+      setState(() {
+        _preloadedMembers = members;
+        _preloadedSections = sections;
+      });
+    } catch (e) {
+      // ignore preload errors (filter popup will still show without lists)
+      debugPrint('Failed to preload members/sections: $e');
+    }
   }
 
   void _showEditDialog(BuildContext context, Task task) {
@@ -256,6 +300,10 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
                                       _filters!['priorities'] ?? ['normal'],
                                     )
                                   : const {'normal'},
+                              availableSections: _preloadedSections,
+                              availableMembers: _preloadedMembers,
+                              initialSection: _filters?['section'],
+                              initialMemberId: _filters?['member'],
                               onChanged: (sel) => pending = sel,
                             ),
                             onApply: () {
@@ -310,6 +358,8 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
                               _filters!['priorities'] ?? ['normal'],
                             )
                           : null,
+                      filterSection: _filters?['section'],
+                      filterMember: _filters?['member'],
                     ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -362,6 +412,12 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
         currentIndex: _currentIndex,
         onTap: (index) {
           if (index == 1) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/orders',
+              (route) => false,
+              arguments: p,
+            );
           } else if (index == 2) {
             Navigator.pushNamed(context, '/manager_create_task', arguments: p);
           } else if (index == 3) {

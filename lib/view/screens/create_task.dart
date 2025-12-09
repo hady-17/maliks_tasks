@@ -336,6 +336,12 @@ class _CreateTaskState extends State<CreateTask> {
         currentIndex: _currentIndex,
         onTap: (index) {
           if (index == 1) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/orders',
+              (route) => false,
+              arguments: p,
+            );
           } else if (index == 2) {
             Navigator.pushNamed(context, '/create_task', arguments: p);
           } else if (index == 3) {

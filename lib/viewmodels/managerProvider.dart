@@ -25,6 +25,8 @@ class ManagerTaskProvider extends ChangeNotifier {
     String? taskDate,
     String status = 'both',
     List<String>? priorities,
+    String? filterSection,
+    String? filterMember,
   }) {
     final dateFilter =
         taskDate ?? DateTime.now().toIso8601String().split('T').first;
@@ -42,6 +44,17 @@ class ManagerTaskProvider extends ChangeNotifier {
             // Filter by date
             final matchesDate = row['task_date'] == dateFilter;
             if (!matchesDate) return false;
+
+            // Section filter (if provided)
+            if (filterSection != null && filterSection.trim().isNotEmpty) {
+              if ((row['assigned_section'] ?? '') != filterSection)
+                return false;
+            }
+
+            // Member filter (if provided)
+            if (filterMember != null && filterMember.trim().isNotEmpty) {
+              if ((row['assigned_to'] ?? '') != filterMember) return false;
+            }
 
             // Status filter
             if (status != 'both') {

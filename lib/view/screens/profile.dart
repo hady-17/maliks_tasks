@@ -242,6 +242,12 @@ class ProfilePage extends StatelessWidget {
         onTap: (index) {
           if (role == 'manager') {
             if (index == 1) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/orders',
+                (route) => false,
+                arguments: p,
+              );
             } else if (index == 2) {
               Navigator.pushNamedAndRemoveUntil(
                 context,
@@ -269,6 +275,12 @@ class ProfilePage extends StatelessWidget {
             return;
           } else {
             if (index == 1) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/orders',
+                (route) => false,
+                arguments: p,
+              );
             } else if (index == 2) {
               Navigator.pushNamed(context, '/create_task', arguments: p);
             } else if (index == 3) {

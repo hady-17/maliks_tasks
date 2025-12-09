@@ -13,6 +13,7 @@ import 'package:maliks_tasks/view/screens/create_task.dart';
 import 'package:maliks_tasks/view/screens/profile.dart';
 import './view/screens/manager_homeScreen.dart';
 import './view/screens/managerCreateTask.dart';
+import './view/screens/orderScreen.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfilePage(),
         '/manager_home': (context) => const ManagerHomescreen(),
         '/manager_create_task': (context) => const ManagerCreateTaskScreen(),
+        '/orders': (context) => const Orderscreen(),
       },
       debugShowCheckedModeBanner: false,
     );

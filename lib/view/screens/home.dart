@@ -189,6 +189,12 @@ class _HomePageState extends State<HomePage> {
         currentIndex: _currentIndex,
         onTap: (index) {
           if (index == 1) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/orders',
+              (route) => false,
+              arguments: p,
+            );
           } else if (index == 2) {
             Navigator.pushNamed(context, '/create_task', arguments: p);
           } else if (index == 3) {

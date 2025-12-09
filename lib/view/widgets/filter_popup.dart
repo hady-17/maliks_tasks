@@ -40,7 +40,15 @@ class FilterPopup extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Flexible(child: child),
+              // Constrain the filter content and make it scrollable so all controls
+              // (status, priority, section, member) are reachable on small screens.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  // limit height to ~60% of viewport or 420px whichever is smaller
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                child: SingleChildScrollView(child: child),
+              ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -75,12 +83,21 @@ class TaskFilter extends StatefulWidget {
   final String initialStatus; // 'both' | 'open' | 'done'
   final Set<String> initialPriorities;
   final ValueChanged<Map<String, dynamic>>? onChanged;
+  // Optional: sections and members to allow filtering by section or specific member
+  final List<String>? availableSections;
+  final List<Map<String, String>>? availableMembers; // {id, name}
+  final String? initialSection;
+  final String? initialMemberId;
 
   const TaskFilter({
     super.key,
     this.initialStatus = 'both',
     this.initialPriorities = const {'normal'},
     this.onChanged,
+    this.availableSections,
+    this.availableMembers,
+    this.initialSection,
+    this.initialMemberId,
   });
 
   @override
@@ -90,6 +107,8 @@ class TaskFilter extends StatefulWidget {
 class _TaskFilterState extends State<TaskFilter> {
   late String _status;
   late Set<String> _priorities;
+  String? _section;
+  String? _memberId;
 
   static const List<String> _prioritiesAll = ['low', 'normal', 'high'];
 
@@ -98,6 +117,8 @@ class _TaskFilterState extends State<TaskFilter> {
     super.initState();
     _status = widget.initialStatus;
     _priorities = Set<String>.from(widget.initialPriorities);
+    _section = widget.initialSection;
+    _memberId = widget.initialMemberId;
     _notify();
   }
 
@@ -105,6 +126,8 @@ class _TaskFilterState extends State<TaskFilter> {
     widget.onChanged?.call({
       'status': _status,
       'priorities': _priorities.toList(),
+      'section': _section,
+      'member': _memberId,
     });
   }
 
@@ -176,6 +199,122 @@ class _TaskFilterState extends State<TaskFilter> {
             );
           }).toList(),
         ),
+        const SizedBox(height: 12),
+        if (widget.availableSections != null &&
+            widget.availableSections!.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              const Text(
+                'Section',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children:
+                    [
+                          ChoiceChip(
+                            label: const Text('Any'),
+                            selected: _section == null,
+                            onSelected: (_) => setState(() {
+                              _section = null;
+                              _notify();
+                            }),
+                          ),
+                        ]
+                        .followedBy(
+                          widget.availableSections!.map((s) {
+                            final selected = _section == s;
+                            return ChoiceChip(
+                              label: Text(s),
+                              selected: selected,
+                              onSelected: (_) => setState(() {
+                                _section = selected ? null : s;
+                                _notify();
+                              }),
+                              selectedColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                            );
+                          }),
+                        )
+                        .toList(),
+              ),
+            ],
+          ),
+
+        if (widget.availableMembers != null &&
+            widget.availableMembers!.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              const Text(
+                'Member',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue txt) {
+                  final q = txt.text.toLowerCase();
+                  return widget.availableMembers!
+                      .map((m) => m['name'] ?? '')
+                      .where((n) => n.toLowerCase().contains(q))
+                      .toList();
+                },
+                onSelected: (selection) {
+                  final entry = widget.availableMembers!.firstWhere(
+                    (m) => (m['name'] ?? '') == selection,
+                    orElse: () => <String, String>{},
+                  );
+                  final id = entry['id'];
+                  setState(() {
+                    _memberId = id;
+                    _notify();
+                  });
+                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onFieldSubmitted) {
+                      // If we have an initial selected member id, seed the controller text
+                      if ((_memberId != null ||
+                              widget.initialMemberId != null) &&
+                          controller.text.isEmpty) {
+                        final seedId = _memberId ?? widget.initialMemberId;
+                        final seedName = widget.availableMembers!.firstWhere(
+                          (m) => m['id'] == seedId,
+                          orElse: () => <String, String>{},
+                        )['name'];
+                        if (seedName != null && seedName.isNotEmpty)
+                          controller.text = seedName;
+                      }
+
+                      return TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: InputDecoration(
+                          hintText: 'Search member',
+                          border: OutlineInputBorder(),
+                          suffixIcon: _memberId != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    setState(() {
+                                      _memberId = null;
+                                      controller.clear();
+                                      _notify();
+                                    });
+                                  },
+                                )
+                              : null,
+                        ),
+                        onSubmitted: (_) => onFieldSubmitted(),
+                      );
+                    },
+              ),
+            ],
+          ),
       ],
     );
   }

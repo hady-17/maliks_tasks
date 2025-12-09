@@ -63,8 +63,8 @@ class ModernNavBar extends StatelessWidget {
   List<_NavItemData> _buildNavItems() {
     return [
       _NavItemData(icon: Icons.home_rounded, label: 'Home'),
-      _NavItemData(icon: Icons.search_rounded, label: 'Search'),
-      _NavItemData(icon: Icons.add_circle_rounded, label: 'Create'),
+      _NavItemData(icon: Icons.list_rounded, label: 'Orders'),
+      _NavItemData(icon: Icons.add_task_rounded, label: 'Add Task'),
       _NavItemData(icon: Icons.notifications_rounded, label: 'Alerts'),
       _NavItemData(icon: Icons.person_rounded, label: 'Profile'),
     ];
