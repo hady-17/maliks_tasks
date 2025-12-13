@@ -20,6 +20,7 @@ class OrderProvider extends ChangeNotifier {
     required String orderDate,
     String status = 'both',
     List<String>? types,
+    String scope = 'all', // 'all' | 'yours'
   }) {
     // Build the stream query
     var streamBuilder = _supabase.from('orders').stream(primaryKey: ['id']);
@@ -38,9 +39,18 @@ class OrderProvider extends ChangeNotifier {
           )
           .toList();
 
-      // Filter by section if applicable
-      if (section.isNotEmpty) {
-        orders = orders.where((o) => o.section == section).toList();
+      // Scope handling: if user requested 'yours', filter to orders
+      // created by the user or in the user's section. Otherwise, if
+      // section is provided (non-empty) filter by that section.
+      if (scope == 'yours') {
+        final safeSection = (section.isNotEmpty) ? section : '_NO_SECTION_';
+        orders = orders
+            .where((o) => o.createdUserId == userId || o.section == safeSection)
+            .toList();
+      } else {
+        if (section.isNotEmpty) {
+          orders = orders.where((o) => o.section == section).toList();
+        }
       }
 
       // Filter by status

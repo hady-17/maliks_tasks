@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:maliks_tasks/view/widgets/appBar.dart';
 import 'package:maliks_tasks/view/widgets/navBar.dart';
 import 'package:maliks_tasks/view/widgets/orderCard.dart';
+import 'package:maliks_tasks/view/widgets/filter_popup.dart';
+import 'package:maliks_tasks/view/widgets/order_filter.dart';
 import '../../model/task/order.dart';
 import '../../viewmodels/order_provider.dart';
 import 'package:calendar_timeline/calendar_timeline.dart';
@@ -39,6 +41,17 @@ class _OrderscreenState extends State<Orderscreen> {
     }
 
     final orderProvider = Provider.of<OrderProvider>(context);
+    final role = (p['role'] as String?) ?? 'member';
+
+    // Set default filters according to role: members see only their orders,
+    // managers default to seeing all branch orders.
+    if (_filters == null) {
+      _filters = {
+        'status': 'both',
+        'types': ['pickup', 'delivery', 'from_another_branch'],
+        'scope': role == 'member' ? 'yours' : 'all',
+      };
+    }
     // Compute bottom inset and nav bar height so we can pad the list
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     final navBarHeight = 70.0 + bottomInset;
@@ -80,9 +93,52 @@ class _OrderscreenState extends State<Orderscreen> {
                     ),
                     const SizedBox(width: 4),
                     IconButton(
-                      onPressed: () {
-                        // TODO: Implement filter for orders
-                        print('Filter orders');
+                      onPressed: () async {
+                        // show order filter dialog
+                        Map<String, dynamic> selected = _filters != null
+                            ? Map<String, dynamic>.from(_filters!)
+                            : {
+                                'status': 'both',
+                                'types': [
+                                  'pickup',
+                                  'delivery',
+                                  'from_another_branch',
+                                ],
+                                'scope': 'all',
+                              };
+
+                        await showDialog<void>(
+                          context: context,
+                          builder: (ctx) {
+                            return FilterPopup(
+                              child: OrderFilter(
+                                initialStatus: selected['status'] ?? 'both',
+                                initialTypes: Set<String>.from(
+                                  selected['types'] ??
+                                      [
+                                        'pickup',
+                                        'delivery',
+                                        'from_another_branch',
+                                      ],
+                                ),
+                                initialScope: selected['scope'] ?? 'all',
+                                availableSections:
+                                    (p['branch_sections'] is List)
+                                    ? List<String>.from(p['branch_sections'])
+                                    : null,
+                                disableScope: role == 'member',
+                                onChanged: (m) {
+                                  selected = m;
+                                },
+                              ),
+                              onApply: () {
+                                setState(() {
+                                  _filters = selected;
+                                });
+                              },
+                            );
+                          },
+                        );
                       },
                       icon: const Icon(
                         Icons.filter_list_alt,
@@ -117,13 +173,18 @@ class _OrderscreenState extends State<Orderscreen> {
               child: StreamBuilder<List<Order>>(
                 stream: orderProvider.watchTodayOrders(
                   branchId: p['branch_id'],
-                  section: p['section'] ?? '',
+                  // If scope is 'all' we should not restrict by the user's section;
+                  // pass empty section to request all branch orders.
+                  section: (_filters?['scope'] ?? 'all') == 'all'
+                      ? ''
+                      : (p['section'] ?? ''),
                   userId: p['id'],
                   orderDate: _selectedDate.toIso8601String().split('T').first,
                   status: _filters?['status'] ?? 'both',
                   types: _filters != null
                       ? List<String>.from(_filters!['types'] ?? [])
                       : null,
+                  scope: _filters?['scope'] ?? 'all',
                 ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
