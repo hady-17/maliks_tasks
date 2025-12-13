@@ -9,13 +9,16 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:maliks_tasks/viewmodels/task_provider.dart';
 import 'package:maliks_tasks/viewmodels/managerProvider.dart';
+import 'package:maliks_tasks/viewmodels/order_provider.dart';
 import 'package:maliks_tasks/view/screens/create_task.dart';
 import 'package:maliks_tasks/view/screens/profile.dart';
 import './view/screens/manager_homeScreen.dart';
 import './view/screens/managerCreateTask.dart';
 import './view/screens/orderScreen.dart';
+import './view/screens/create_order.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await Supabase.initialize(
     url: dotenv.env['project_url']!,
@@ -26,6 +29,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ManagerTaskProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: const MyApp(),
     ),
@@ -52,6 +56,7 @@ class MyApp extends StatelessWidget {
         '/sign_in': (context) => const SignInPage(),
         '/login': (context) => const LoginPage(),
         '/create_task': (context) => const CreateTask(),
+        '/create_order': (context) => const CreateOrderScreen(),
         '/profile': (context) => const ProfilePage(),
         '/manager_home': (context) => const ManagerHomescreen(),
         '/manager_create_task': (context) => const ManagerCreateTaskScreen(),

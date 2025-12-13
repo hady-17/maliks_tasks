@@ -66,6 +66,8 @@ class SignInViewModel extends ChangeNotifier {
   Future<Map<String, dynamic>?> signIn() async {
     if (validateEmail(emailController.text) != null ||
         validatePassword(passwordController.text) != null) {
+      _errorMessage = 'Please fill in all fields correctly';
+      notifyListeners();
       return null;
     }
 
@@ -76,19 +78,27 @@ class SignInViewModel extends ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
 
+      print('🔐 Attempting sign in with email: ${emailController.text.trim()}');
+
       final res = await supabase.auth.signInWithPassword(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
 
+      print('✅ Sign in response received');
+
       final userId = res.user?.id ?? supabase.auth.currentUser?.id;
 
       if (userId == null) {
+        print('❌ No user ID found after sign in');
         _isLoading = false;
         _errorMessage = 'Sign in failed: no user.';
         notifyListeners();
         return null;
       }
+
+      print('👤 User ID: $userId');
+      print('📋 Fetching profile from database...');
 
       // Fetch profile
       final profile = await supabase
@@ -98,11 +108,14 @@ class SignInViewModel extends ChangeNotifier {
           .maybeSingle();
 
       if (profile == null) {
+        print('❌ Profile not found in database');
         _isLoading = false;
         _errorMessage = 'Profile not found. Please contact support.';
         notifyListeners();
         return null;
       }
+
+      print('✅ Profile found: ${profile['email']} - Role: ${profile['role']}');
 
       // Persist the remember-me choice so app startup can respect it
       try {
@@ -116,13 +129,16 @@ class SignInViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
+      print('✅ Sign in successful! Returning profile.');
       return Map<String, dynamic>.from(profile);
     } on AuthException catch (e) {
+      print('❌ Auth Exception: ${e.message}');
       _isLoading = false;
       _errorMessage = e.message;
       notifyListeners();
       return null;
     } catch (e) {
+      print('❌ General Exception: $e');
       _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();

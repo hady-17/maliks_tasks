@@ -5,6 +5,7 @@ class Order {
   final String? orderDescription;
   final DateTime orderedDate;
   final DateTime? dueDate;
+  final DateTime? doneAt;
   final String status;
   final String section;
   final String item;
@@ -20,6 +21,7 @@ class Order {
     this.orderDescription,
     required this.orderedDate,
     this.dueDate,
+    this.doneAt,
     required this.status,
     required this.section,
     required this.item,
@@ -42,6 +44,7 @@ class Order {
       dueDate: json['due_date'] != null
           ? DateTime.parse(json['due_date'])
           : null,
+      doneAt: json['done_at'] != null ? DateTime.parse(json['done_at']) : null,
       status: json['status'] ?? 'open',
       section: json['section'] ?? '',
       item: json['item'] ?? '',
@@ -63,6 +66,7 @@ class Order {
       'order_description': orderDescription,
       'ordered_date': orderedDate.toIso8601String(),
       'due_date': dueDate?.toIso8601String(),
+      'done_at': doneAt?.toIso8601String(),
       'status': status,
       'section': section,
       'item': item,
@@ -83,6 +87,7 @@ class Order {
     String? orderDescription,
     DateTime? orderedDate,
     DateTime? dueDate,
+    DateTime? doneAt,
     String? status,
     String? section,
     String? item,
@@ -98,6 +103,7 @@ class Order {
       orderDescription: orderDescription ?? this.orderDescription,
       orderedDate: orderedDate ?? this.orderedDate,
       dueDate: dueDate ?? this.dueDate,
+      doneAt: doneAt ?? this.doneAt,
       status: status ?? this.status,
       section: section ?? this.section,
       item: item ?? this.item,
