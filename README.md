@@ -47,6 +47,26 @@ creation and manager workflows.
   - `createTask()` and other insert paths remove empty string values to
     prevent PostgREST check-constraint failures (e.g. `tasks_shift_check`).
 
+- Orders, Search & Realtime improvements
+  - Added an `Orders` screen matching the home/tasks layout, with
+    `CreateOrder` flow and `OrderProvider` for CRUD + realtime streaming.
+  - Status toggle now updates a `done_at` (and `done_by_user` where
+    appropriate) and uses in-flight tracking so the UI shows a loading
+    indicator while the update is processing.
+  - Realtime streams are deduped and the UI avoids double-refreshes by
+    comparing last-emitted lists and relying on the stream rather than
+    local double-notifies.
+  - Filters support `scope` (branch-wide `all` vs `yours`) and role-based
+    defaults/disable (members locked to `yours`). `OrderFilter` widget
+    added to the codebase.
+  - Search improvements:
+    - `searchTasks` and `searchOrders` perform server-side ILIKE queries
+      (title, description, status, priority) while respecting RLS and
+      branch/section scope.
+    - The search field was moved above the "Today's" heading in both
+      `home.dart` and `orderScreen.dart` and the search toggle was made
+      more reliable by switching `_showSearch` to a `ValueNotifier`.
+
 
 ## Key files (where to look)
 
