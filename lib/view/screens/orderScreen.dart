@@ -291,14 +291,37 @@ class _OrderscreenState extends State<Orderscreen> {
         currentIndex: _currentIndex,
         onTap: (index) {
           if (index == 0) {
+            if (p!['role'] == 'member') {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                (route) => false,
+                arguments: p,
+              );
+              return;
+            }
             Navigator.pushNamedAndRemoveUntil(
               context,
-              '/home',
+              '/manager_home',
               (route) => false,
               arguments: p,
             );
           } else if (index == 2) {
-            Navigator.pushNamed(context, '/create_task', arguments: p);
+            if (p!['role'] == 'member') {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/create_task_member',
+                (route) => false,
+                arguments: p,
+              );
+              return;
+            }
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/manager_create_task',
+              (route) => false,
+              arguments: p,
+            );
           } else if (index == 3) {
             print('pressed on $index');
           } else if (index == 4) {
