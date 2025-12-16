@@ -132,11 +132,18 @@ class OrderProvider extends ChangeNotifier {
       final newStatus = markingComplete ? 'completed' : 'open';
 
       // Prepare update payload: set done_at to now when completing, or null when reopening
+      final currentUserId =
+          _supabase.auth.currentUser?.id ??
+          Supabase.instance.client.auth.currentUser?.id;
+
       final updatePayload = <String, dynamic>{'status': newStatus};
       if (markingComplete) {
         updatePayload['done_at'] = now.toIso8601String();
+        // record who completed the order (store UUID)
+        updatePayload['done_by'] = currentUserId;
       } else {
         updatePayload['done_at'] = null;
+        updatePayload['done_by'] = null;
       }
 
       // Update status and done_at atomically

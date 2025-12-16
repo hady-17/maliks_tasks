@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/appBar.dart';
 import '../widgets/navBar.dart';
+import '../../const.dart';
 
 /// Modern Profile page
 class ProfilePage extends StatelessWidget {
@@ -231,7 +232,37 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
             ),
-
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kActiveColor,
+                    shadowColor: Colors.black,
+                    elevation: 5,
+                  ),
+                  onPressed: () {
+                    print('Navigating to Dashboard');
+                  },
+                  child: Text("DashBoard", style: TextStyle(color: kMainColor)),
+                ),
+                SizedBox(width: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey,
+                    shadowColor: Colors.black,
+                    elevation: 5,
+                  ),
+                  onPressed: () {
+                    print('Navigating to feedBack');
+                  },
+                  child: Text(
+                    "feedBack",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
             // spacing so actions are not obscured by bottom nav
             SizedBox(height: 70 + bottomInset + 8),
           ],

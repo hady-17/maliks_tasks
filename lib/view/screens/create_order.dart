@@ -286,44 +286,63 @@ class _CreateOrderContent extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 12),
 
-                                // Sections dropdown
-                                DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    labelText: 'Section',
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  value:
-                                      vm.section ??
-                                      (profile!['section'] as String? ??
-                                          (vm.availableSections.isNotEmpty
-                                              ? vm.availableSections.first
-                                              : null)),
-                                  items: vm.availableSections.isEmpty
-                                      ? [
-                                          DropdownMenuItem(
-                                            value:
-                                                profile!['section']
-                                                    as String? ??
-                                                '',
-                                            child: Text(
-                                              profile!['section'] ?? '',
+                                // Sections dropdown (dedupe items and ensure value exists)
+                                Builder(
+                                  builder: (ctx) {
+                                    final profileSection =
+                                        profile!['section'] as String? ?? '';
+                                    final sections = List<String>.from(
+                                      vm.availableSections.toSet(),
+                                    );
+
+                                    // Determine the effective selected value
+                                    String? effectiveValue =
+                                        vm.section ??
+                                        (profileSection.isNotEmpty
+                                            ? profileSection
+                                            : (sections.isNotEmpty
+                                                  ? sections.first
+                                                  : null));
+
+                                    // Ensure the effective value appears exactly once in the items
+                                    if (effectiveValue != null &&
+                                        !sections.contains(effectiveValue)) {
+                                      sections.insert(0, effectiveValue);
+                                    }
+
+                                    final items = sections.isEmpty
+                                        ? [
+                                            DropdownMenuItem(
+                                              value: profileSection,
+                                              child: Text(profileSection),
                                             ),
+                                          ]
+                                        : sections
+                                              .map(
+                                                (s) => DropdownMenuItem(
+                                                  value: s,
+                                                  child: Text(s),
+                                                ),
+                                              )
+                                              .toList();
+
+                                    return DropdownButtonFormField<String>(
+                                      decoration: InputDecoration(
+                                        labelText: 'Section',
+                                        filled: true,
+                                        fillColor: Colors.grey.shade50,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
-                                        ]
-                                      : vm.availableSections
-                                            .map(
-                                              (s) => DropdownMenuItem(
-                                                value: s,
-                                                child: Text(s),
-                                              ),
-                                            )
-                                            .toList(),
-                                  onChanged: (v) => vm.setSection(v),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                      value: effectiveValue,
+                                      items: items,
+                                      onChanged: (v) => vm.setSection(v),
+                                    );
+                                  },
                                 ),
                                 const SizedBox(height: 12),
 
