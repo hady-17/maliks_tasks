@@ -46,93 +46,121 @@ creation and manager workflows.
 - DB / payload fixes
   - `createTask()` and other insert paths remove empty string values to
     prevent PostgREST check-constraint failures (e.g. `tasks_shift_check`).
+```markdown
+# maliks_tasks
 
-- Orders, Search & Realtime improvements
-  - Added an `Orders` screen matching the home/tasks layout, with
-    `CreateOrder` flow and `OrderProvider` for CRUD + realtime streaming.
-  - Status toggle now updates a `done_at` (and `done_by_user` where
-    appropriate) and uses in-flight tracking so the UI shows a loading
-    indicator while the update is processing.
-  - Realtime streams are deduped and the UI avoids double-refreshes by
-    comparing last-emitted lists and relying on the stream rather than
-    local double-notifies.
-  - Filters support `scope` (branch-wide `all` vs `yours`) and role-based
-    defaults/disable (members locked to `yours`). `OrderFilter` widget
-    added to the codebase.
-  - Search improvements:
-    - `searchTasks` and `searchOrders` perform server-side ILIKE queries
-      (title, description, status, priority) while respecting RLS and
-      branch/section scope.
-    - The search field was moved above the "Today's" heading in both
-      `home.dart` and `orderScreen.dart` and the search toggle was made
-      more reliable by switching `_showSearch` to a `ValueNotifier`.
+Lightweight Flutter task management app using Supabase for backend
+services (auth + database). The project follows a simple MVVM-style
+approach using `provider`/`ChangeNotifier` for state management and has
+separate flows for regular users and managers.
 
+This README is a concise, up-to-date guide for getting the project
+running locally and where to look for the important pieces of code.
 
-## Key files (where to look)
+## Key features
 
-- `lib/main.dart` — app entrypoint, providers registration, and routes.
-- `lib/view/screens/home.dart` — home screen with calendar + task list.
-- `lib/view/widgets/filter_popup.dart` — popup filter UI (status + priority).
-- `lib/view/screens/manager_homeScreen.dart` — manager dashboard with
-  edit/delete dialogs.
-- `lib/view/screens/managerCreateTask.dart` — redesigned manager create
-  task screen (uses `ManagerCreateTaskVM`).
-- `lib/viewmodels/manager_create_task_vm.dart` — manager create task VM.
-- `lib/viewmodels/managerProvider.dart` — manager task provider (watch/update/delete).
+- Task creation, edit, delete and status toggle
+- Role-aware routing (manager vs member)
+- Calendar-based filtering and task search
+- Realtime updates using Supabase realtime streams
+- Notes on tasks with author metadata
 
+## Requirements
 
-## How to run
+- Flutter 3.0+ (stable) or newer
+- Dart SDK matching your Flutter version
+- A Supabase project (URL + anon key) with the app's DB schema
 
-1. Create `.env` in the project root with Supabase keys:
+## Quick setup
+
+1. Add Supabase credentials to a `.env` file at the project root (used by
+   the app at runtime). Example `.env`:
 
 ```text
-project_url=YOUR_SUPABASE_URL
-anon_api_key=YOUR_SUPABASE_ANON_KEY
+SUPABASE_URL=your-supabase-url
+SUPABASE_ANON_KEY=your-anon-key
 ```
 
-2. Install packages:
+2. Install dependencies:
 
 ```powershell
 flutter pub get
 ```
 
-3. Run the app (example for Windows desktop):
+3. Run the app (choose device):
 
 ```powershell
+# Windows desktop
 flutter run -d windows
+
+# Android device / emulator
+flutter run -d android
+
+# iOS simulator (macOS only)
+flutter run -d ios
+
+# Web
+flutter run -d chrome
 ```
 
+If you use CI or local scripts, expose the `SUPABASE_URL` and
+`SUPABASE_ANON_KEY` environment variables to the runner.
 
-## Notes about testing and common issues
+## Structure / Where to look
 
-- If you previously saw a PostgrestException complaining about
-  a failing check constraint (e.g. `tasks_shift_check`) that was caused
-  by an empty `shift` value — the VM and create-task paths now remove
-  empty strings from the payload before inserting.
-- If you see "Looking up a deactivated widget's ancestor is unsafe" or
-  similar lifecycle errors, they usually come from using `BuildContext`
-  after an `await` inside dialogs. The manager screens were refactored to
-  use dialog builder contexts and `maybeOf` lookups to fix this.
-- The redesigned `ManagerCreateTask` prevents overflow by constraining
-  the card height and wrapping content in a scroll view.
+- `lib/main.dart` — app entrypoint, provider registration, and routes
+- `lib/view/screens` — UI screens (home, manager flows, orders)
+- `lib/view/widgets` — reusable widgets such as the filter popup and
+  task card
+- `lib/viewmodels` — view models / providers that hold controllers and
+  business logic
+- `lib/model` — data models used across the app
 
+## Running tests & common developer commands
 
-## Next steps / suggestions
+- Run unit/widget tests:
 
-- Run analyzer and fix remaining warnings/deprecations:
+```powershell
+flutter test
+```
+
+- Run the analyzer:
 
 ```powershell
 flutter analyze
 ```
 
-- Run and test the manager create task flow and the manager home
-  screen. If you see runtime errors or DB insertion failures, paste the
-  console output and I will patch quickly.
+- Format Dart files:
 
-- Consider adding a typed `UserProfile` model and an `AuthProvider`
-  to avoid passing untyped `Map<String,dynamic>` around the app.
+```powershell
+flutter format .
+```
 
+## Common issues / notes
 
-If you'd like, I can create a small PR with the remaining analyzer
-fixes, or iterate on the UI colors and spacing in `managerCreateTask`.
+- Database constraints: some insert/update endpoints strip empty-string
+  values to avoid PostgREST check-constraint failures (e.g. `tasks_shift_check`).
+- Dialog lifecycle: dialogs were refactored to avoid using a disposed
+  `BuildContext` after async operations — use builder contexts or
+  `ScaffoldMessenger.maybeOf` before awaiting.
+
+## Contributing
+
+If you'd like to contribute:
+
+1. Fork the repo and create a feature branch
+2. Run `flutter test` and `flutter analyze` locally
+3. Open a PR with a clear description and screenshots (if UI changes)
+
+## Need help or want specific changes?
+
+If you want, I can:
+- Run a focused analyzer pass and fix a set of warnings
+- Update the UI spacing/colors for a specific screen
+- Create a short guide for seeding the Supabase DB schema locally
+
+Open [README.md](README.md) with changes you'd like me to apply next,
+or tell me which area you want updated and I'll prepare a PR.
+
+``` 
 
