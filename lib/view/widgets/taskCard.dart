@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../model/task/tasks.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/task_provider.dart';
+import '../../const.dart';
 
 // Simple in-memory cache for profile id -> display name to avoid repeated DB calls.
 final Map<String, String> _profileNameCache = {};
@@ -24,64 +27,19 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompleted = task.status == 'done';
-    // Modern card design with gradient and compact chrome
-    final bgGradient = LinearGradient(
-      colors: [
-        (cardColor ?? const Color(0xFF8C7E7E)).withOpacity(0.95),
-        (cardColor ?? const Color(0xFF8C7E7E)).withOpacity(0.85),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
 
-    String initials() {
-      final name = task.title;
-      final parts = name.split(' ');
-      if (parts.isEmpty) return '';
-      if (parts.length >= 2) {
-        return (parts[0][0] + parts[1][0]).toUpperCase();
-      }
-      return parts[0].substring(0, 1).toUpperCase();
-    }
-
-    return Material(
-      color: Colors.transparent,
+    return Card(
+      color: cardColor ?? kMainColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: bgGradient,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.12),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar / initials
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white24,
-                child: Text(
-                  initials(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Content
+              // Main content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,100 +54,78 @@ class TaskCard extends StatelessWidget {
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         _priorityChip(task.priority),
                       ],
                     ),
-
-                    const SizedBox(height: 6),
-
-                    Text(
-                      task.description ?? '',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
+                    if ((task.description ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        task.description ?? '',
+                        style: const TextStyle(color: Colors.white70),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // Use Wrap so chips wrap to next line on narrow screens
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        _metaChip(Icons.calendar_today_rounded, task.taskDate),
-                        _profileChip(Icons.person_rounded, task.assignedTo),
-                        if (task.doneByUser != null)
-                          _profileChip(
-                            Icons.check_circle_outline,
-                            task.doneByUser,
-                          ),
-                        // status pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isCompleted
-                                ? Colors.green.withOpacity(0.2)
-                                : Colors.white24,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            isCompleted ? 'Done' : 'Open',
-                            style: TextStyle(
-                              color: isCompleted ? Colors.green : Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
+                        _profileChip(Icons.person, task.assignedTo),
+                        const SizedBox(width: 10),
+                        if (task.doneByUser != null &&
+                            task.doneByUser!.isNotEmpty)
+                          _profileChip(Icons.check_circle, task.doneByUser),
+                        const Spacer(),
+                        _statusChip(isCompleted),
                       ],
                     ),
                   ],
                 ),
               ),
 
-              // Actions constrained to fixed width to avoid layout overflow
+              // Actions
+              const SizedBox(width: 16),
               SizedBox(
                 width: 48,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Complete toggle
                     Container(
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.white24,
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
                         icon: Icon(
-                          isCompleted ? Icons.check : Icons.circle_outlined,
+                          isCompleted
+                              ? Icons.check
+                              : Icons.radio_button_unchecked,
                           color: Colors.white,
                         ),
                         onPressed: onComplete,
                         splashRadius: 20,
                         padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(),
                       ),
                     ),
+                    const SizedBox(height: 10),
 
-                    const SizedBox(height: 8),
+                    // Notes button with badge
+                    _notesButton(context),
 
-                    // Edit button
+                    const SizedBox(height: 10),
+
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.white70),
                       onPressed: onEdit,
                       splashRadius: 18,
                       padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
@@ -201,63 +137,300 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  // (removed old _doneByLabel — replaced by profile-aware chips)
-
-  /// A small chip that shows a profile name (fetched from `profiles.full_name`)
-  /// for the given `userId`. If `userId` is null or empty, shows 'Unassigned'.
-  Widget _profileChip(IconData icon, String? userId) {
-    if (userId == null || userId.trim().isEmpty) {
-      return _metaChip(icon, 'Unassigned');
-    }
-
-    final currentId = Supabase.instance.client.auth.currentUser?.id;
-    // If it's the current user, show 'You' immediately
-    if (currentId != null && currentId == userId) {
-      return _metaChip(icon, 'You');
-    }
-
-    return FutureBuilder<String>(
-      future: _fetchProfileName(userId),
-      builder: (context, snap) {
-        String text;
-        if (snap.connectionState == ConnectionState.waiting) {
-          text = '...';
-        } else if (snap.hasData && (snap.data?.trim().isNotEmpty ?? false)) {
-          text = snap.data!;
-        } else {
-          // fallback to shortened id
-          final short = (userId.length >= 8) ? userId.substring(0, 8) : userId;
-          text = 'By $short';
-        }
-
-        return _metaChip(icon, text);
+  Widget _notesButton(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: Provider.of<TaskProvider>(
+        context,
+        listen: false,
+      ).fetchNotes(task.id),
+      builder: (ctx, snap) {
+        final hasNotes = snap.hasData && (snap.data?.isNotEmpty ?? false);
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.note_add, color: Colors.white70),
+              onPressed: () => _openNotesDialog(context),
+              splashRadius: 18,
+              padding: const EdgeInsets.all(6),
+            ),
+            if (hasNotes)
+              Positioned(
+                right: 4,
+                top: 4,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                ),
+              ),
+          ],
+        );
       },
     );
   }
 
-  Future<String> _fetchProfileName(String userId) async {
-    // Return cached if available
-    if (_profileNameCache.containsKey(userId))
-      return _profileNameCache[userId]!;
-
-    try {
-      final client = Supabase.instance.client;
-      final resp = await client
-          .from('profiles')
-          .select('full_name')
-          .eq('id', userId)
-          .maybeSingle();
-      if (resp != null && resp['full_name'] != null) {
-        final name = resp['full_name'] as String;
-        _profileNameCache[userId] = name;
-        return name;
+  Future<void> _openNotesDialog(BuildContext context) async {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (currentUserId == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Not authenticated')));
       }
-    } catch (_) {}
+      return;
+    }
 
-    return '';
+    final provider = Provider.of<TaskProvider>(context, listen: false);
+    List<Map<String, dynamic>> notes = await provider.fetchNotes(task.id);
+
+    final controller = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dCtx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: StatefulBuilder(
+              builder: (dCtx, setState) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kMainColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(14),
+                        topRight: Radius.circular(14),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Notes',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white70),
+                          onPressed: () => Navigator.of(dCtx).pop(),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    child: SizedBox(
+                      height: 320,
+                      child: notes.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(
+                                    Icons.note_outlined,
+                                    size: 48,
+                                    color: Colors.grey,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'No notes yet',
+                                    style: TextStyle(color: Colors.black54),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: notes.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (ctx2, i) {
+                                final n = notes[i];
+                                final text = (n['note'] ?? '') as String;
+                                final authorId =
+                                    n['author_id']?.toString() ?? '';
+                                final created = n['created_at'];
+                                DateTime? createdAt;
+                                try {
+                                  if (created != null)
+                                    createdAt = DateTime.parse(
+                                      created.toString(),
+                                    ).toLocal();
+                                } catch (_) {}
+                                return Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(text),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            FutureBuilder<String>(
+                                              future: _fetchProfileName(
+                                                authorId,
+                                              ),
+                                              builder: (sCtx, sSnap) {
+                                                final name =
+                                                    (sSnap.hasData &&
+                                                        (sSnap
+                                                                .data
+                                                                ?.isNotEmpty ??
+                                                            false))
+                                                    ? sSnap.data!
+                                                    : (authorId.isNotEmpty
+                                                          ? authorId.substring(
+                                                              0,
+                                                              8,
+                                                            )
+                                                          : 'Unknown');
+                                                return Text(
+                                                  name,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.black54,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            Text(
+                                              createdAt != null
+                                                  ? '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}-${createdAt.day.toString().padLeft(2, '0')} ${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}'
+                                                  : (created ?? ''),
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black38,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 14,
+                              ),
+                              hintText: 'Write a note...',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                          ),
+                          onPressed: () async {
+                            final content = controller.text.trim();
+                            if (content.isEmpty) return;
+                            final ok = await provider.addNote(
+                              taskId: task.id,
+                              userId: currentUserId,
+                              content: content,
+                            );
+                            if (ok) {
+                              setState(() {
+                                notes.insert(0, {
+                                  'note': content,
+                                  'author_id': currentUserId,
+                                  'created_at': DateTime.now()
+                                      .toIso8601String(),
+                                });
+                                controller.clear();
+                              });
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to add note'),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: const Icon(Icons.send, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
-
-  // removed unused _priorityDot
 
   Widget _priorityChip(String priority) {
     final Map<String, Color> map = {
@@ -265,13 +438,10 @@ class TaskCard extends StatelessWidget {
       'medium': Colors.amber,
       'low': Colors.greenAccent,
     };
-
     final color = map[priority.toLowerCase()] ?? Colors.blueAccent;
-
     final textColor = color.computeLuminance() > 0.5
         ? Colors.black
         : Colors.white;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -283,6 +453,24 @@ class TaskCard extends StatelessWidget {
         style: TextStyle(
           color: textColor,
           fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _statusChip(bool isCompleted) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isCompleted ? Colors.green.withOpacity(0.2) : Colors.white24,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        isCompleted ? 'Done' : 'Open',
+        style: TextStyle(
+          color: isCompleted ? Colors.green : Colors.white,
+          fontWeight: FontWeight.w600,
           fontSize: 12,
         ),
       ),
@@ -315,5 +503,47 @@ class TaskCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _profileChip(IconData icon, String? userId) {
+    if (userId == null || userId.trim().isEmpty)
+      return _metaChip(icon, 'Unassigned');
+    final currentId = Supabase.instance.client.auth.currentUser?.id;
+    if (currentId != null && currentId == userId) return _metaChip(icon, 'You');
+
+    return FutureBuilder<String>(
+      future: _fetchProfileName(userId),
+      builder: (context, snap) {
+        String text;
+        if (snap.connectionState == ConnectionState.waiting) {
+          text = '...';
+        } else if (snap.hasData && (snap.data?.trim().isNotEmpty ?? false)) {
+          text = snap.data!;
+        } else {
+          final short = (userId.length >= 8) ? userId.substring(0, 8) : userId;
+          text = 'By $short';
+        }
+        return _metaChip(icon, text);
+      },
+    );
+  }
+
+  Future<String> _fetchProfileName(String userId) async {
+    if (_profileNameCache.containsKey(userId))
+      return _profileNameCache[userId]!;
+    try {
+      final client = Supabase.instance.client;
+      final resp = await client
+          .from('profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .maybeSingle();
+      if (resp != null && resp['full_name'] != null) {
+        final name = resp['full_name'] as String;
+        _profileNameCache[userId] = name;
+        return name;
+      }
+    } catch (_) {}
+    return '';
   }
 }

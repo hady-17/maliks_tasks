@@ -176,19 +176,41 @@ class TaskProvider extends ChangeNotifier {
   // ---------------------------------------------------------
   // Add note to task
   // ---------------------------------------------------------
-  Future<void> addNote({
+  /// Insert a note for [taskId]. Returns `true` on success.
+  Future<bool> addNote({
     required String taskId,
     required String userId,
     required String content,
   }) async {
     try {
-      await supabase.from('task_notes').insert({
-        'task_id': taskId,
-        'user_id': userId,
-        'content': content,
-      });
+      final res = await supabase
+          .from('task_notes')
+          .insert({'task_id': taskId, 'author_id': userId, 'note': content})
+          .select()
+          .single();
+
+      // success if res is a map with an id
+      if (res is Map && res['id'] != null) return true;
+      return false;
     } catch (e) {
-      print("Error adding note: $e");
+      debugPrint("Error adding note: $e");
+      return false;
+    }
+  }
+
+  /// Fetch notes for a given task, newest first.
+  Future<List<Map<String, dynamic>>> fetchNotes(String taskId) async {
+    try {
+      final resp = await supabase
+          .from('task_notes')
+          .select()
+          .eq('task_id', taskId)
+          .order('created_at', ascending: false);
+      final list = resp as List<dynamic>? ?? [];
+      return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } catch (e) {
+      debugPrint('Error fetching notes: $e');
+      return [];
     }
   }
 
