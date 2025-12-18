@@ -259,7 +259,7 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
         title: 'Manager Dashboard',
         subtitle: 'Manage all branch tasks',
         showBackButton: false,
-        showSearchButton: true,
+        showDashboardButton: true,
       ),
       body: Container(
         decoration: BoxDecoration(

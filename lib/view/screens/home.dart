@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage> {
         title: 'Tasks',
         subtitle: 'All your tasks at a glance',
         showBackButton: false,
-        showSearchButton: true,
+        showDashboardButton: true,
       ),
       body: Container(
         decoration: BoxDecoration(

@@ -5,8 +5,8 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? subtitle;
   final bool showBackButton;
   final bool showNotifications;
-  final bool showSearchButton;
-  final VoidCallback? onSearch;
+  final bool showDashboardButton;
+  final VoidCallback? onDashboard;
   final bool hasNotifications;
   final Color backgroundColor;
 
@@ -16,8 +16,8 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.subtitle,
     this.showBackButton = false,
     this.showNotifications = false,
-    this.showSearchButton = false,
-    this.onSearch,
+    this.showDashboardButton = false,
+    this.onDashboard,
     this.hasNotifications = false,
     this.backgroundColor = const Color(0xFF8C7E7E), // default color
   });
@@ -61,14 +61,14 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        if (showSearchButton)
+        if (showDashboardButton)
           IconButton(
             onPressed:
-                onSearch ??
+                onDashboard ??
                 () {
-                  print('Search button pressed');
+                  print('dashboard button pressed');
                 },
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.dashboard_rounded),
             color: Colors.white,
           ),
         if (showNotifications)

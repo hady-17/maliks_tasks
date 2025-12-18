@@ -64,7 +64,7 @@ class _OrderscreenState extends State<Orderscreen> {
         title: 'Orders',
         subtitle: 'All your orders at a glance',
         showBackButton: false,
-        showSearchButton: true,
+        showDashboardButton: true,
       ),
       body: Container(
         decoration: BoxDecoration(
