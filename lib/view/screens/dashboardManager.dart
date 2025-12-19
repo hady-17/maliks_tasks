@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/manager_metrics_provider.dart';
+import '../../view/widgets/dashboard/kpi_cards.dart';
+import '../../view/widgets/dashboard/performance_chart.dart';
+import '../../view/widgets/dashboard/performance_table.dart';
+import '../../view/widgets/dashboard/dashboard_states.dart';
+import '../../view/widgets/dashboard/date_range_selector.dart';
 import '../widgets/appBar.dart';
 import '../widgets/navBar.dart';
 
@@ -84,7 +89,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               : _buildContent(metrics),
         ),
       ),
-      bottomNavigationBar: ModernNavBar(currentIndex: 0, onTap: (_) {}),
     );
   }
 
@@ -134,13 +138,13 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           const SizedBox(height: 16),
           _buildMetricTypeSelector(),
           const SizedBox(height: 24),
-          _KpiGrid(metrics: metrics),
+          KpiGrid(metrics: metrics),
           const SizedBox(height: 24),
           _buildAverageRow(metrics),
           const SizedBox(height: 24),
-          _PerformanceChart(metrics: metrics, showTasks: _showTasks),
+          PerformanceChart(metrics: metrics, showTasks: _showTasks),
           const SizedBox(height: 24),
-          _PerformanceTable(metrics: metrics),
+          PerformanceTable(metrics: metrics),
         ],
       ),
     );
@@ -265,311 +269,30 @@ class _KpiGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 2.2,
+        childAspectRatio: 1.8,
       ),
       children: [
-        _KpiCard(
+        KpiCard(
           title: 'Tasks Placed',
           value: metrics.totalTasksPlaced.toString(),
           icon: Icons.playlist_add,
         ),
-        _KpiCard(
+        KpiCard(
           title: 'Tasks Done',
           value: metrics.totalTasksDone.toString(),
           icon: Icons.check_circle,
         ),
-        _KpiCard(
+        KpiCard(
           title: 'Orders Placed',
           value: metrics.totalOrdersPlaced.toString(),
           icon: Icons.shopping_cart,
         ),
-        _KpiCard(
+        KpiCard(
           title: 'Orders Done',
           value: metrics.totalOrdersDone.toString(),
           icon: Icons.done_all,
         ),
       ],
     );
-  }
-}
-
-class _KpiCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-
-  const _KpiCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 10),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Spacer(),
-                Icon(icon, size: 22),
-              ],
-            ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PerformanceChart extends StatelessWidget {
-  final ManagerMetricsProvider metrics;
-  final bool showTasks;
-  const _PerformanceChart({required this.metrics, required this.showTasks});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              showTasks ? 'Tasks Performance' : 'Orders Performance',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 300,
-              child: _PerformanceBarChart(
-                members: metrics.memberMetrics,
-                showTasks: showTasks,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PerformanceBarChart extends StatelessWidget {
-  final List<MemberMetric> members;
-  final bool showTasks;
-  const _PerformanceBarChart({required this.members, required this.showTasks});
-
-  @override
-  Widget build(BuildContext context) {
-    if (members.isEmpty) return const Center(child: Text('No data'));
-
-    final sorted = members.toList();
-    sorted.sort((a, b) {
-      final aTotal = showTasks
-          ? (a.tasksPlaced + a.tasksDone)
-          : (b.ordersPlaced + b.ordersDone);
-      final bTotal = showTasks
-          ? (b.tasksPlaced + b.tasksDone)
-          : (b.ordersPlaced + b.ordersDone);
-      return bTotal.compareTo(aTotal);
-    });
-    final top = sorted.take(6).toList();
-
-    return ListView.builder(
-      itemCount: top.length,
-      itemBuilder: (context, index) {
-        final m = top[index];
-        final placed = showTasks ? m.tasksPlaced : m.ordersPlaced;
-        final done = showTasks ? m.tasksDone : m.ordersDone;
-        final total = placed > 0 ? placed : 1;
-        final donePercent = (done / total * 100).clamp(0, 100);
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      m.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '$done/$placed',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Stack(
-                children: [
-                  Container(
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: donePercent / 100,
-                    child: Container(
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: showTasks ? Colors.blue : Colors.green,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${donePercent.toStringAsFixed(0)}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// ------------------------------------------------------
-/// MEMBERS PERFORMANCE TABLE
-/// ------------------------------------------------------
-
-class _PerformanceTable extends StatefulWidget {
-  final ManagerMetricsProvider metrics;
-  const _PerformanceTable({required this.metrics});
-
-  @override
-  State<_PerformanceTable> createState() => _PerformanceTableState();
-}
-
-class _PerformanceTableState extends State<_PerformanceTable> {
-  int _sortColumn = 0;
-  bool _sortAscending = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Detailed Performance',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            sortColumnIndex: _sortColumn,
-            sortAscending: _sortAscending,
-            columns: [
-              DataColumn(
-                label: const Text('Member'),
-                onSort: (col, asc) => _sort(col, asc, (m) => m.name),
-              ),
-              DataColumn(
-                label: const Text('Tasks'),
-                numeric: true,
-                onSort: (col, asc) => _sort(col, asc, (m) => m.tasksDone),
-              ),
-              DataColumn(
-                label: const Text('Orders'),
-                numeric: true,
-                onSort: (col, asc) => _sort(col, asc, (m) => m.ordersDone),
-              ),
-              DataColumn(
-                label: const Text('Avg Task (m)'),
-                numeric: true,
-                onSort: (col, asc) =>
-                    _sort(col, asc, (m) => m.avgTaskCompletionMinutes),
-              ),
-              DataColumn(
-                label: const Text('Avg Order (m)'),
-                numeric: true,
-                onSort: (col, asc) =>
-                    _sort(col, asc, (m) => m.avgOrderCompletionMinutes),
-              ),
-            ],
-            rows: widget.metrics.memberMetrics.map((m) {
-              return DataRow(
-                cells: [
-                  DataCell(Text(m.name)),
-                  DataCell(Text('${m.tasksDone}/${m.tasksPlaced}')),
-                  DataCell(Text('${m.ordersDone}/${m.ordersPlaced}')),
-                  DataCell(Text(m.avgTaskCompletionMinutes.toStringAsFixed(1))),
-                  DataCell(
-                    Text(m.avgOrderCompletionMinutes.toStringAsFixed(1)),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _sort<T>(
-    int col,
-    bool asc,
-    Comparable<T> Function(MemberMetric) getField,
-  ) {
-    setState(() {
-      _sortColumn = col;
-      _sortAscending = asc;
-      widget.metrics.memberMetrics.sort((a, b) {
-        final aField = getField(a) as Comparable?;
-        final bField = getField(b) as Comparable?;
-        if (aField == null && bField == null) return 0;
-        if (aField == null) return asc ? -1 : 1;
-        if (bField == null) return asc ? 1 : -1;
-        return asc ? aField.compareTo(bField) : bField.compareTo(aField);
-      });
-    });
   }
 }

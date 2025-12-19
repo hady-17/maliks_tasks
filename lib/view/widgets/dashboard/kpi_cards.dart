@@ -21,11 +21,15 @@ class KpiCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, size: 28),
-            const Spacer(),
-            Text(title, style: const TextStyle(fontSize: 12)),
+            Row(
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12)),
+                const Spacer(),
+                Icon(icon, size: 28),
+              ],
+            ),
             Text(
               value,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -52,7 +56,7 @@ class KpiGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.8,
+        childAspectRatio: 1.78,
       ),
       children: [
         KpiCard(
