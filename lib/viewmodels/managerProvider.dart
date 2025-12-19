@@ -165,6 +165,9 @@ class ManagerTaskProvider extends ChangeNotifier {
       final updatePayload = {
         'status': newStatus,
         'done_by_user': newStatus == 'done' ? currentUserId : null,
+        'done_at': newStatus == 'done'
+            ? DateTime.now().toUtc().toIso8601String()
+            : null,
       };
 
       await supabase.from('tasks').update(updatePayload).eq('id', taskId);

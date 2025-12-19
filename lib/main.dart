@@ -10,12 +10,15 @@ import 'package:provider/provider.dart';
 import 'package:maliks_tasks/viewmodels/task_provider.dart';
 import 'package:maliks_tasks/viewmodels/managerProvider.dart';
 import 'package:maliks_tasks/viewmodels/order_provider.dart';
+import 'package:maliks_tasks/viewmodels/manager_metrics_provider.dart';
 import 'package:maliks_tasks/view/screens/create_task.dart';
 import 'package:maliks_tasks/view/screens/profile.dart';
 import './view/screens/manager_homeScreen.dart';
 import './view/screens/managerCreateTask.dart';
 import './view/screens/orderScreen.dart';
 import './view/screens/create_order.dart';
+import './view/screens/dashboardManager.dart';
+import './view/screens/dashboardMember.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +33,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ManagerTaskProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => ManagerMetricsProvider()),
       ],
       child: const MyApp(),
     ),
@@ -61,6 +65,8 @@ class MyApp extends StatelessWidget {
         '/manager_home': (context) => const ManagerHomescreen(),
         '/manager_create_task': (context) => const ManagerCreateTaskScreen(),
         '/orders': (context) => const Orderscreen(),
+        '/manager_dashboard': (context) => const ManagerDashboardScreen(),
+        '/member_dashboard': (context) => const memeberDashBoardscreen(),
       },
       debugShowCheckedModeBanner: false,
     );

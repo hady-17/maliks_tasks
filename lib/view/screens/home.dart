@@ -51,6 +51,14 @@ class _HomePageState extends State<HomePage> {
         subtitle: 'All your tasks at a glance',
         showBackButton: false,
         showDashboardButton: true,
+        onDashboard: () {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/dashboard',
+            (route) => false,
+            arguments: p,
+          );
+        },
       ),
       body: Container(
         decoration: BoxDecoration(

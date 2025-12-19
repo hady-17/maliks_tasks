@@ -98,11 +98,14 @@ class TaskProvider extends ChangeNotifier {
           supabase?.auth.currentUser?.id ??
           Supabase.instance.client.auth.currentUser?.id;
 
-      // If marking as done, set done_by_user to the current user's id.
-      // If reverting to open, clear done_by_user (send explicit null).
+      // If marking as done, set done_by_user to the current user's id and done_at to now.
+      // If reverting to open, clear done_by_user and done_at (send explicit null).
       final updatePayload = {
         'status': newStatus,
         'done_by_user': newStatus == 'done' ? currentUserId : null,
+        'done_at': newStatus == 'done'
+            ? DateTime.now().toUtc().toIso8601String()
+            : null,
       };
 
       await supabase.from('tasks').update(updatePayload).eq('id', taskId);
@@ -129,7 +132,11 @@ class TaskProvider extends ChangeNotifier {
   // ---------------------------------------------------------
   Future<bool> markTaskAsDone(String taskId, String currentUserId) async {
     try {
-      final payload = {'status': 'done', 'done_by_user': currentUserId};
+      final payload = {
+        'status': 'done',
+        'done_by_user': currentUserId,
+        'done_at': DateTime.now().toUtc().toIso8601String(),
+      };
 
       await supabase.from('tasks').update(payload).eq('id', taskId);
 
@@ -154,7 +161,7 @@ class TaskProvider extends ChangeNotifier {
   // ---------------------------------------------------------
   Future<bool> reopenTask(String taskId) async {
     try {
-      final payload = {'status': 'open', 'done_by_user': null};
+      final payload = {'status': 'open', 'done_by_user': null, 'done_at': null};
 
       await supabase.from('tasks').update(payload).eq('id', taskId);
 

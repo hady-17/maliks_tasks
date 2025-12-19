@@ -260,6 +260,8 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
         subtitle: 'Manage all branch tasks',
         showBackButton: false,
         showDashboardButton: true,
+        onDashboard: () =>
+            (Navigator.pushNamed(context, '/manager_dashboard', arguments: p)),
       ),
       body: Container(
         decoration: BoxDecoration(
