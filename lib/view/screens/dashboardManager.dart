@@ -4,10 +4,7 @@ import '../../viewmodels/manager_metrics_provider.dart';
 import '../../view/widgets/dashboard/kpi_cards.dart';
 import '../../view/widgets/dashboard/performance_chart.dart';
 import '../../view/widgets/dashboard/performance_table.dart';
-import '../../view/widgets/dashboard/dashboard_states.dart';
-import '../../view/widgets/dashboard/date_range_selector.dart';
 import '../widgets/appBar.dart';
-import '../widgets/navBar.dart';
 
 class ManagerDashboardScreen extends StatefulWidget {
   const ManagerDashboardScreen({super.key});

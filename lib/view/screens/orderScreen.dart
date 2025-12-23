@@ -216,19 +216,21 @@ class _OrderscreenState extends State<Orderscreen> {
                           final id = order.id;
                           try {
                             await orderProvider.toggleOrderStatus(id);
-                            if (context.mounted)
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Order status updated'),
                                 ),
                               );
+                            }
                           } catch (e) {
-                            if (context.mounted)
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Failed to update status: $e'),
                                 ),
                               );
+                            }
                           }
                         },
 
@@ -250,7 +252,7 @@ class _OrderscreenState extends State<Orderscreen> {
                                   order.section == section);
 
                           if (!allowed) {
-                            if (context.mounted)
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -258,6 +260,7 @@ class _OrderscreenState extends State<Orderscreen> {
                                   ),
                                 ),
                               );
+                            }
                             return;
                           }
 
@@ -269,10 +272,11 @@ class _OrderscreenState extends State<Orderscreen> {
 
                           if (res != null) {
                             // show success message
-                            if (context.mounted)
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Order updated')),
                               );
+                            }
                           }
                         },
                         onTap: () {
@@ -292,7 +296,7 @@ class _OrderscreenState extends State<Orderscreen> {
         currentIndex: _currentIndex,
         onTap: (index) {
           if (index == 0) {
-            if (p!['role'] == 'member') {
+            if (p['role'] == 'member') {
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 '/home',

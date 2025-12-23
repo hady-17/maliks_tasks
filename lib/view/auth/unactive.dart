@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../widgets/appBar.dart';
-import '../widgets/navBar.dart';
 
 class UnactivePage extends StatelessWidget {
   const UnactivePage({super.key});
