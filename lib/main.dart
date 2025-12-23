@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maliks_tasks/view/screens/home.dart';
 import 'package:maliks_tasks/view/screens/welcome_screen.dart';
 import 'package:maliks_tasks/view/auth/sign_in.dart';
+import 'package:maliks_tasks/view/auth/unactive.dart';
 import 'package:maliks_tasks/view/auth/login.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,7 @@ import './view/screens/orderScreen.dart';
 import './view/screens/create_order.dart';
 import './view/screens/dashboardManager.dart';
 import './view/screens/dashboardMember.dart';
+import './view/screens/account_approvel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +60,8 @@ class MyApp extends StatelessWidget {
           child: const HomePage(),
         ),
         '/sign_in': (context) => const SignInPage(),
+        '/unactive': (context) => const UnactivePage(),
+        '/account_approvel': (context) => const AccountApprovel(),
         '/login': (context) => const LoginPage(),
         '/create_task': (context) => const CreateTask(),
         '/create_order': (context) => const CreateOrderScreen(),
@@ -136,6 +140,18 @@ class _RootPageState extends State<RootPage> {
       }
 
       if (!mounted) return;
+
+      // If profile has an `active` field and it's not true, navigate to unactive page
+      if (profile.containsKey('active') && profile['active'] != true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/unactive',
+            arguments: profile,
+          );
+        });
+        return;
+      }
 
       // Navigate based on role: managers to /manager_home, members to /home
       final role = profile['role'] ?? 'member';

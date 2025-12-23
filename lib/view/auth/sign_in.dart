@@ -32,6 +32,12 @@ class _SignInPageContentState extends State<_SignInPageContent> {
     if (!mounted) return;
 
     if (profile != null) {
+      // If profile has an `active` field and it's not true, send user to unactive page
+      if (profile.containsKey('active') && profile['active'] != true) {
+        Navigator.pushReplacementNamed(context, '/unactive', arguments: profile);
+        return;
+      }
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Signed in successfully!')));

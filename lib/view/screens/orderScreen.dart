@@ -34,6 +34,8 @@ class _OrderscreenState extends State<Orderscreen> {
   @override
   Widget build(BuildContext context) {
     final p = _resolveProfile(context);
+    final _isManager = (p != null && (p['role'] as String?) == 'manager');
+
     print('Profile in OrderScreen: $p');
 
     if (p == null) {
@@ -45,13 +47,11 @@ class _OrderscreenState extends State<Orderscreen> {
 
     // Set default filters according to role: members see only their orders,
     // managers default to seeing all branch orders.
-    if (_filters == null) {
-      _filters = {
-        'status': 'both',
-        'types': ['pickup', 'delivery', 'from_another_branch'],
-        'scope': role == 'member' ? 'yours' : 'all',
-      };
-    }
+    _filters ??= {
+      'status': 'both',
+      'types': ['pickup', 'delivery', 'from_another_branch'],
+      'scope': role == 'member' ? 'yours' : 'all',
+    };
     // Compute bottom inset and nav bar height so we can pad the list
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     final navBarHeight = 70.0 + bottomInset;
@@ -61,6 +61,7 @@ class _OrderscreenState extends State<Orderscreen> {
       extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: ModernAppBar(
+        isManager: _isManager,
         title: 'Orders',
         subtitle: 'All your orders at a glance',
         showBackButton: false,

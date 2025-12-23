@@ -256,6 +256,7 @@ class _ManagerHomescreenState extends State<ManagerHomescreen> {
       extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: ModernAppBar(
+        isManager: true,
         title: 'Manager Dashboard',
         subtitle: 'Manage all branch tasks',
         showBackButton: false,

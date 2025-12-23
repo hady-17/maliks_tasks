@@ -9,6 +9,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onDashboard;
   final bool hasNotifications;
   final Color backgroundColor;
+  final bool isManager;
 
   const ModernAppBar({
     super.key,
@@ -20,6 +21,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onDashboard,
     this.hasNotifications = false,
     this.backgroundColor = const Color(0xFF8C7E7E), // default color
+    this.isManager = false,
   });
 
   @override
@@ -107,13 +109,20 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.only(right: 16.0),
           child: GestureDetector(
             onTap: () {
-              // TODO: profile screen
+              if (isManager) {
+                Navigator.pushNamed(context, '/account_approvel');
+                return;
+              }
+              // TODO: profile screen for non-manager users
               print('Profile avatar tapped');
             },
             child: CircleAvatar(
               radius: 18,
               backgroundColor: Colors.grey[200],
-              child: const Icon(Icons.person, color: Colors.black54),
+              child: Icon(
+                isManager ? Icons.manage_accounts_rounded : Icons.person,
+                color: Colors.black54,
+              ),
             ),
           ),
         ),

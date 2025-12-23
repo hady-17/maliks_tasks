@@ -60,6 +60,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
     return Scaffold(
       appBar: ModernAppBar(
+        isManager: true,
         title: 'Manager Dashboard',
         subtitle: 'Team Performance Analytics',
         showDashboardButton: false,

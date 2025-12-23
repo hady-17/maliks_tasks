@@ -57,6 +57,7 @@ class _ManagerCreateTaskContent extends StatelessWidget {
       extendBodyBehindAppBar: true,
       extendBody: true,
       appBar: ModernAppBar(
+        isManager: true,
         title: 'Create Task',
         subtitle: 'Manager Panel',
         showBackButton: true,

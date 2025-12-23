@@ -51,6 +51,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = _resolveProfile(context);
+    final _isManager = (p != null && p['role'] == 'manager');
     if (p == null) {
       return const Scaffold(body: Center(child: Text('No profile provided')));
     }
@@ -68,6 +69,7 @@ class ProfilePage extends StatelessWidget {
       extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: ModernAppBar(
+        isManager: _isManager,
         title: 'Profile',
         subtitle: 'View and edit your profile information',
       ),
