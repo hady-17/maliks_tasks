@@ -92,7 +92,7 @@ class _CreateTaskState extends State<CreateTask> {
       appBar: ModernAppBar(
         title: 'Create Task',
         subtitle: 'Create tasks quickly',
-        showBackButton: true,
+        showBackButton: false,
       ),
       body: p == null
           ? const Center(child: Text('No profile provided'))

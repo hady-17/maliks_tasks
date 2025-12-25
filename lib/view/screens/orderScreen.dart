@@ -66,6 +66,9 @@ class _OrderscreenState extends State<Orderscreen> {
         subtitle: 'All your orders at a glance',
         showBackButton: false,
         showDashboardButton: true,
+        onDashboard: () {
+          Navigator.pushNamed(context, '/member_dashboard', arguments: p);
+        },
       ),
       body: Container(
         decoration: BoxDecoration(

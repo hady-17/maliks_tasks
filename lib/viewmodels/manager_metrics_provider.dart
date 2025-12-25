@@ -143,17 +143,29 @@ class ManagerMetricsProvider extends ChangeNotifier {
       final createdBy = t['created_by'];
       final doneBy = t['done_by_user'];
 
-      if (_memberMetrics.containsKey(createdBy)) {
+      if (createdBy != null) {
+        if (!_memberMetrics.containsKey(createdBy)) {
+          _memberMetrics[createdBy] = MemberMetric(
+            userId: createdBy,
+            name: t['creator_name'] ?? (createdBy.toString()),
+          );
+        }
         _memberMetrics[createdBy]!.tasksPlaced++;
         totalTasksPlaced++;
       }
 
-      if (doneBy != null && _memberMetrics.containsKey(doneBy)) {
+      if (doneBy != null) {
+        if (!_memberMetrics.containsKey(doneBy)) {
+          _memberMetrics[doneBy] = MemberMetric(
+            userId: doneBy,
+            name: t['done_by_name'] ?? (doneBy.toString()),
+          );
+        }
         _memberMetrics[doneBy]!.tasksDone++;
         totalTasksDone++;
 
-        final createdAt = DateTime.tryParse(t['created_at'] ?? '');
-        final doneAt = DateTime.tryParse(t['done_at'] ?? '');
+        final createdAt = _parseDateTime(t['created_at']);
+        final doneAt = _parseDateTime(t['done_at']);
 
         if (createdAt != null && doneAt != null && doneAt.isAfter(createdAt)) {
           _memberMetrics[doneBy]!.addTaskCompletion(
@@ -182,25 +194,52 @@ class ManagerMetricsProvider extends ChangeNotifier {
     for (final o in orders) {
       final createdBy = o['created_user_id'];
       final doneBy = o['done_by'];
-
-      if (_memberMetrics.containsKey(createdBy)) {
+      if (createdBy != null) {
+        if (!_memberMetrics.containsKey(createdBy)) {
+          _memberMetrics[createdBy] = MemberMetric(
+            userId: createdBy,
+            name: o['creator_name'] ?? (createdBy.toString()),
+          );
+        }
         _memberMetrics[createdBy]!.ordersPlaced++;
         totalOrdersPlaced++;
       }
 
-      if (doneBy != null && _memberMetrics.containsKey(doneBy)) {
+      if (doneBy != null) {
+        if (!_memberMetrics.containsKey(doneBy)) {
+          _memberMetrics[doneBy] = MemberMetric(
+            userId: doneBy,
+            name: o['done_by_name'] ?? (doneBy.toString()),
+          );
+        }
         _memberMetrics[doneBy]!.ordersDone++;
         totalOrdersDone++;
 
-        final createdAt = DateTime.tryParse(o['created_at'] ?? '');
-        final doneAt = DateTime.tryParse(o['done_at'] ?? '');
+        final createdAt = _parseDateTime(o['created_at']);
+        final doneAt = _parseDateTime(o['done_at']);
 
         if (createdAt != null && doneAt != null && doneAt.isAfter(createdAt)) {
           _memberMetrics[doneBy]!.addOrderCompletion(
             doneAt.difference(createdAt),
           );
+        } else {
+          debugPrint(
+            'Order timestamps invalid for order id=${o['id'] ?? '(no id)'}: created_at=${o['created_at']} done_at=${o['done_at']} parsedCreated=$createdAt parsedDone=$doneAt',
+          );
         }
       }
+    }
+  }
+
+  DateTime? _parseDateTime(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return v;
+    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+    try {
+      final s = v.toString();
+      return DateTime.tryParse(s);
+    } catch (_) {
+      return null;
     }
   }
 

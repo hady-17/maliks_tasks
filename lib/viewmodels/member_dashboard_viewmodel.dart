@@ -63,12 +63,25 @@ class MemberDashboardViewModel extends ChangeNotifier {
 
       if (doneBy == userId) {
         memberMetric?.tasksDone++;
-        final createdAt = DateTime.tryParse(t['created_at']?.toString() ?? '');
-        final doneAt = DateTime.tryParse(t['done_at']?.toString() ?? '');
+        final createdAt = _parseDateTime(t['created_at']);
+        final doneAt = _parseDateTime(t['done_at']);
         if (createdAt != null && doneAt != null && doneAt.isAfter(createdAt)) {
           memberMetric?.addTaskCompletion(doneAt.difference(createdAt));
         }
       }
+    }
+  }
+
+  DateTime? _parseDateTime(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return v;
+    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+    try {
+      // Supabase commonly returns ISO strings
+      final s = v.toString();
+      return DateTime.tryParse(s);
+    } catch (_) {
+      return null;
     }
   }
 
