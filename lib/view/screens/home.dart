@@ -52,12 +52,7 @@ class _HomePageState extends State<HomePage> {
         showBackButton: false,
         showDashboardButton: true,
         onDashboard: () {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/dashboard',
-            (route) => false,
-            arguments: p,
-          );
+          Navigator.pushNamed(context, '/member_dashboard', arguments: p);
         },
       ),
       body: Container(
