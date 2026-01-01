@@ -41,6 +41,14 @@ class _SignInPageContentState extends State<_SignInPageContent> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Signed in successfully!')));
+
+      // If profile section is admin, navigate to admin screen
+      final section = profile['section'] ?? '';
+      if (section == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin', arguments: profile);
+        return;
+      }
+
       final role = profile['role'] ?? 'member';
       final route = (role == 'manager') ? '/manager_home' : '/home';
       Navigator.pushReplacementNamed(context, route, arguments: profile);

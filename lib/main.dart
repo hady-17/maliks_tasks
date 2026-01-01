@@ -15,6 +15,7 @@ import 'package:maliks_tasks/viewmodels/manager_metrics_provider.dart';
 import 'package:maliks_tasks/view/screens/create_task.dart';
 import 'package:maliks_tasks/view/screens/profile.dart';
 import './view/screens/manager_homeScreen.dart';
+import './view/screens/adminScreen.dart';
 import './view/screens/managerCreateTask.dart';
 import './view/screens/orderScreen.dart';
 import './view/screens/create_order.dart';
@@ -67,6 +68,7 @@ class MyApp extends StatelessWidget {
         '/create_order': (context) => const CreateOrderScreen(),
         '/profile': (context) => const ProfilePage(),
         '/manager_home': (context) => const ManagerHomescreen(),
+        '/admin': (context) => const Adminscreen(),
         '/manager_create_task': (context) => const ManagerCreateTaskScreen(),
         '/orders': (context) => const Orderscreen(),
         '/manager_dashboard': (context) => const ManagerDashboardScreen(),
@@ -149,6 +151,15 @@ class _RootPageState extends State<RootPage> {
             '/unactive',
             arguments: profile,
           );
+        });
+        return;
+      }
+
+      // If profile section is admin, navigate to admin screen
+      final section = profile['section'] ?? '';
+      if (section == 'admin') {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, '/admin', arguments: profile);
         });
         return;
       }

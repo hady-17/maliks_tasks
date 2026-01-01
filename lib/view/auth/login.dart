@@ -35,6 +35,20 @@ class _LoginPageContentState extends State<_LoginPageContent> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Account created successfully!')),
       );
+
+      // If profile has an `active` field and it's not true, send user to unactive page
+      if (profile.containsKey('active') && profile['active'] != true) {
+        Navigator.pushReplacementNamed(context, '/unactive', arguments: profile);
+        return;
+      }
+
+      // If profile section is admin, navigate to admin screen
+      final section = profile['section'] ?? '';
+      if (section == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin', arguments: profile);
+        return;
+      }
+
       final role = profile['role'] ?? 'member';
       final route = (role == 'manager') ? '/manager_home' : '/home';
       Navigator.pushReplacementNamed(context, route, arguments: profile);
