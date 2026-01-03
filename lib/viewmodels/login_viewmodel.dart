@@ -70,11 +70,13 @@ class LoginViewModel extends ChangeNotifier {
   bool _obscureConfirm = true;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _privacyAccepted = false;
 
   bool get obscurePassword => _obscurePassword;
   bool get obscureConfirm => _obscureConfirm;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get privacyAccepted => _privacyAccepted;
 
   void togglePasswordVisibility() {
     _obscurePassword = !_obscurePassword;
@@ -88,6 +90,11 @@ class LoginViewModel extends ChangeNotifier {
 
   void clearError() {
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  void setPrivacyAccepted(bool value) {
+    _privacyAccepted = value;
     notifyListeners();
   }
 
@@ -169,6 +176,13 @@ class LoginViewModel extends ChangeNotifier {
       return null;
     }
 
+    if (!_privacyAccepted) {
+      _errorMessage =
+          'You must accept the Privacy Policy to create an account.';
+      notifyListeners();
+      return null;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -198,7 +212,8 @@ class LoginViewModel extends ChangeNotifier {
       // -----------------------------------------------------
       // 3. Determine role based on position
       // -----------------------------------------------------
-      final role = (_selectedPosition == 'manager' || _selectedPosition == 'supervisor')
+      final role =
+          (_selectedPosition == 'manager' || _selectedPosition == 'supervisor')
           ? 'manager'
           : 'member';
 
@@ -223,6 +238,7 @@ class LoginViewModel extends ChangeNotifier {
           'branch_id': branchId,
           'shift': _selectedShift!.toLowerCase(),
           'role': role,
+          'PrivacyAcception': true,
         });
       } else {
         // Profile exists (created by trigger), update it
@@ -234,6 +250,7 @@ class LoginViewModel extends ChangeNotifier {
               'branch_id': branchId,
               'shift': _selectedShift!.toLowerCase(),
               'role': role,
+              'PrivacyAcception': true,
             })
             .eq('id', userId);
       }

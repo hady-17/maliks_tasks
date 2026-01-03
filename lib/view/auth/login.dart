@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:maliks_tasks/viewmodels/login_viewmodel.dart';
+import 'package:maliks_tasks/view/privacy_policy_screen.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -38,7 +39,11 @@ class _LoginPageContentState extends State<_LoginPageContent> {
 
       // If profile has an `active` field and it's not true, send user to unactive page
       if (profile.containsKey('active') && profile['active'] != true) {
-        Navigator.pushReplacementNamed(context, '/unactive', arguments: profile);
+        Navigator.pushReplacementNamed(
+          context,
+          '/unactive',
+          arguments: profile,
+        );
         return;
       }
 
@@ -98,6 +103,55 @@ class _LoginPageContentState extends State<_LoginPageContent> {
                             _buildHeader(context, accent),
 
                             const SizedBox(height: 20),
+
+                            // Privacy acceptance checkbox
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: vm.privacyAccepted,
+                                  onChanged: (v) =>
+                                      vm.setPrivacyAccepted(v ?? false),
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => vm.setPrivacyAccepted(
+                                      !vm.privacyAccepted,
+                                    ),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(color: Colors.black),
+                                        children: [
+                                          const TextSpan(text: 'I accept the '),
+                                          TextSpan(
+                                            text: 'Privacy Policy',
+                                            style: const TextStyle(
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              color: Colors.blue,
+                                            ),
+                                            recognizer: null,
+                                          ),
+                                          const TextSpan(text: '.'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const PrivacyPolicyScreen(),
+                                    ),
+                                  ),
+                                  child: const Text('View'),
+                                ),
+                              ],
+                            ),
 
                             // Full name
                             _buildTextField(
