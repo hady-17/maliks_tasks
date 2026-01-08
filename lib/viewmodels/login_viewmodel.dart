@@ -196,6 +196,7 @@ class LoginViewModel extends ChangeNotifier {
       final response = await supabase.auth.signUp(
         email: emailController.text.trim(),
         password: passwordController.text,
+        emailRedirectTo: 'com.maliks.tasks://login-callback',
       );
 
       if (response.user == null) {

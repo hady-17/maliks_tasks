@@ -23,6 +23,7 @@ import './view/screens/create_order.dart';
 import './view/screens/dashboardManager.dart';
 import './view/screens/dashboardMember.dart';
 import './view/screens/account_approvel.dart';
+import 'package:maliks_tasks/view/screens/inactiveScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -108,6 +109,7 @@ class MyApp extends StatelessWidget {
         '/orders': (context) => const Orderscreen(),
         '/manager_dashboard': (context) => const ManagerDashboardScreen(),
         '/member_dashboard': (context) => const memeberDashBoardscreen(),
+        '/inactive': (context) => const InactiveScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

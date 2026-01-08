@@ -34,7 +34,11 @@ class _SignInPageContentState extends State<_SignInPageContent> {
     if (profile != null) {
       // If profile has an `active` field and it's not true, send user to unactive page
       if (profile.containsKey('active') && profile['active'] != true) {
-        Navigator.pushReplacementNamed(context, '/unactive', arguments: profile);
+        Navigator.pushReplacementNamed(
+          context,
+          '/unactive',
+          arguments: profile,
+        );
         return;
       }
 
@@ -261,7 +265,9 @@ class _SignInPageContentState extends State<_SignInPageContent> {
 
                   // Social Sign In Buttons
                   OutlinedButton.icon(
-                    onPressed: vm.isLoading ? null : vm.signInWithGoogle,
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/inactive');
+                    },
                     icon: const Icon(Icons.g_mobiledata, size: 28),
                     label: const Text('Continue with Google'),
                     style: OutlinedButton.styleFrom(
@@ -277,7 +283,9 @@ class _SignInPageContentState extends State<_SignInPageContent> {
                   const SizedBox(height: 12),
 
                   OutlinedButton.icon(
-                    onPressed: vm.isLoading ? null : vm.signInWithApple,
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/inactive');
+                    },
                     icon: const Icon(Icons.apple, size: 24),
                     label: const Text('Continue with Apple'),
                     style: OutlinedButton.styleFrom(
