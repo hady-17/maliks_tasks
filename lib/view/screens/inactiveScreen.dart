@@ -11,7 +11,7 @@ class InactiveScreen extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(16.0),
           child: Text(
-            'Your account is currently inactive. Please contact support for more information.',
+            'this featutre is currently inactive. hopefully it will be activated in the future updates.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18),
           ),
