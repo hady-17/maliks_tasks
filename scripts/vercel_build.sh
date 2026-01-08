@@ -1,47 +1,49 @@
-#!/bin/bash
-set -e
+echo "Installing Flutter..."
+echo "Verifying Flutter installation..."
+echo "Enabling Flutter web support..."
+echo "Installing dependencies..."
+echo "Building Flutter web in release mode..."
+#!/usr/bin/env bash
+set -euo pipefail
 
 echo "========================================="
 echo "Starting Flutter Web Build for Vercel"
 echo "========================================="
 
-# Install Flutter
-echo "Installing Flutter..."
-git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+# Clone Flutter stable into /tmp if not already present (cached between builds when possible)
+if [ ! -d "/tmp/flutter" ]; then
+  echo "Installing Flutter (stable)..."
+  git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+fi
+
 export PATH="/tmp/flutter/bin:$PATH"
 
-# Verify Flutter installation
-echo "Verifying Flutter installation..."
+echo "Flutter version:"
 flutter --version
 
-# Enable Flutter Web
-echo "Enabling Flutter web support..."
-flutter config --enable-web
+# Ensure web is enabled
+flutter config --enable-web || true
 
-# Install dependencies
-echo "Installing dependencies..."
+echo "Installing pub dependencies..."
 flutter pub get
 
-# Build Flutter web with environment variables
-echo "Building Flutter web in release mode..."
-
-# Check if environment variables are set
-if [ -z "$SUPABASE_URL" ]; then
+echo "Validating environment variables..."
+if [ -z "${SUPABASE_URL-}" ]; then
   echo "Error: SUPABASE_URL environment variable is not set"
   exit 1
 fi
 
-if [ -z "$SUPABASE_ANON_KEY" ]; then
+if [ -z "${SUPABASE_ANON_KEY-}" ]; then
   echo "Error: SUPABASE_ANON_KEY environment variable is not set"
   exit 1
 fi
 
-# Build with dart-define for environment variables
+echo "Building Flutter web in release mode..."
+# Note: some Flutter releases may not support the --web-renderer flag; omit it for maximum compatibility.
 flutter build web \
   --release \
-  --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
-  --web-renderer canvaskit \
+  --dart-define=SUPABASE_URL="${SUPABASE_URL}" \
+  --dart-define=SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY}" \
   --base-href /
 
 echo "========================================="
