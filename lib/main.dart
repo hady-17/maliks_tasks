@@ -14,6 +14,7 @@ import 'package:maliks_tasks/viewmodels/order_provider.dart';
 import 'package:maliks_tasks/viewmodels/manager_metrics_provider.dart';
 import 'package:maliks_tasks/view/screens/create_task.dart';
 import 'package:maliks_tasks/view/screens/profile.dart';
+import 'package:maliks_tasks/utils/deep_link_handler.dart';
 import './view/screens/manager_homeScreen.dart';
 import './view/screens/adminScreen.dart';
 import './view/screens/managerCreateTask.dart';
@@ -25,11 +26,45 @@ import './view/screens/account_approvel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+
+  // Get Supabase credentials from environment variables (for production)
+  // or fall back to .env file (for local development)
+  String supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
+  String supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  // For local development, try loading from .env file if environment variables are not set
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    try {
+      await dotenv.load(fileName: ".env");
+      supabaseUrl = dotenv.env['project_url'] ?? '';
+      supabaseAnonKey = dotenv.env['anon_api_key'] ?? '';
+    } catch (e) {
+      // .env file not found or error loading - continue with validation below
+      debugPrint('Warning: Could not load .env file: $e');
+    }
+  }
+
+  // Validate required environment variables
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    throw Exception(
+      'Missing required Supabase credentials. '
+      'Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables '
+      'or ensure .env file exists with project_url and anon_api_key.',
+    );
+  }
+
   await Supabase.initialize(
-    url: dotenv.env['project_url']!,
-    anonKey: dotenv.env['anon_api_key']!,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
   );
+
+  // Initialize deep link handler for email verification
+  DeepLinkHandler.initialize();
+  await DeepLinkHandler.handleInitialLink();
+
   runApp(
     MultiProvider(
       providers: [
